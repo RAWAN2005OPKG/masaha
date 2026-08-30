@@ -24,7 +24,10 @@
     "dependencies": {
         "@tailwindcss/vite": "^4.3.3",
         "clsx": "^2.1.1",
+<<<<<<< HEAD
         "firebase": "^12.18.0",
+=======
+>>>>>>> 867bf80af104b836fe59700b37f470fda18ad33a
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "react-icons": "^5.7.0",
