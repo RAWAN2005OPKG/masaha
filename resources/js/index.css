@@ -1,0 +1,66 @@
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* ============================================
+   نظام التصميم (Design Tokens)
+   الألوان مستخرجة فعلياً بالبكسل من تصميم فيجما
+   ============================================ */
+@theme {
+  /* الخط */
+  --font-sans: "Cairo", "IBM Plex Sans Arabic", system-ui, sans-serif;
+
+  /* اللون الأساسي (أخضر البراند) - اللوجو / الأزرار / التاب النشط */
+  --color-brand-400: #34d399;
+  --color-brand-500: #10b981;
+  --color-brand-600: #0ea271;
+
+  /* خلفية البانل الغامق (Hero) وخلفية الكارد داخله */
+  --color-panel: #0a2019;
+  --color-panel-card: #16302a;
+
+  /* ألوان الأيقونات والروابط */
+  --color-accent-amber: #fbbf24;
+  --color-accent-indigo: #818cf8;
+  --color-accent-purple: #a855f7;
+  --color-accent-coral: #f15b5b;
+
+  /* درجات رمادي محايدة (نصوص، حدود) */
+  --color-neutral-50: #f9fafb;
+  --color-neutral-100: #f3f4f6;
+  --color-neutral-300: #d1d5db;
+  --color-neutral-500: #6b7280;
+  --color-neutral-900: #111827;
+
+  /* أحجام خط مريحة على جميع الشاشات */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.6;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.5;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.4;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 1.3;
+
+  /* استدارة الحواف */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+}
+
+html {
+  direction: rtl;
+}
+
+body {
+  @apply bg-neutral-50 text-neutral-900 font-sans antialiased;
+}
+
+/* إصلاح خلفية autofill الصفراء بالمتصفح */
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px white inset;
+}
