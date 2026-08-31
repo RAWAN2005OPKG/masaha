@@ -11,10 +11,7 @@ import {
 import AuthLayout from "../../components/auth/AuthLayout";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-<<<<<<< HEAD
 import { auth, db, createUserWithEmailAndPassword, doc, setDoc } from "../../firebase"; // استيراد دوال الفايربيز والفايرستور
-=======
->>>>>>> 867bf80af104b836fe59700b37f470fda18ad33a
 
 export default function Register() {
   const navigate = useNavigate();
@@ -77,7 +74,6 @@ export default function Register() {
     setErrors({});
 
     try {
-<<<<<<< HEAD
       console.log("1. جاري إنشاء الحساب في Authentication...");
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -104,17 +100,6 @@ export default function Register() {
       console.error("❌ خطأ تفصيلي أثناء التنفيذ:", error);
       alert("خطأ: " + error.message);
       setErrors({ email: error.message });
-=======
-      const response = await window.axios.post('/api/register', formData);
-      localStorage.setItem('auth_token', response.data.token);
-      navigate("/dashboard");
-    } catch (error) {
-      if (error.response && error.response.data.errors) {
-        setErrors(error.response.data.errors);
-      } else {
-        console.error("حدث خطأ أثناء التسجيل", error);
-      }
->>>>>>> 867bf80af104b836fe59700b37f470fda18ad33a
     } finally {
       setIsSubmitting(false);
     }

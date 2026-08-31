@@ -4,10 +4,7 @@ import { HiOutlineMail, HiOutlineLockClosed, HiEye, HiEyeOff } from "react-icons
 import AuthLayout from "../../components/auth/AuthLayout";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-<<<<<<< HEAD
 import { auth, signInWithEmailAndPassword } from "../../firebase"; // استيراد إعدادات فايربيز
-=======
->>>>>>> 867bf80af104b836fe59700b37f470fda18ad33a
 
 export default function Login() {
   const navigate = useNavigate();
@@ -20,10 +17,6 @@ export default function Login() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-<<<<<<< HEAD
-=======
-    // نمسح رسالة الخطأ فور ما المستخدم يبلش يعدّل الحقل
->>>>>>> 867bf80af104b836fe59700b37f470fda18ad33a
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -55,18 +48,15 @@ export default function Login() {
     setErrors({});
 
     try {
-<<<<<<< HEAD
       // ربط تسجيل الدخول مع Firebase
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      // تخزين مؤشر أو توكن الفايربيز محلياً إذا لزم
       localStorage.setItem('auth_token', user.accessToken);
 
       setSuccessMsg("تم تسجيل الدخول بنجاح! جاري التوجيه...");
       setTimeout(() => navigate("/dashboard"), 1000);
     } catch (error) {
-      // التعامل مع أخطاء فايربيز وعرضها بلغة واضحة
       let errorMsg = "بيانات الدخول غير صحيحة أو حدث خطأ بالاتصال";
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         errorMsg = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
@@ -74,18 +64,6 @@ export default function Login() {
         errorMsg = "تم حظر المحاولات مؤقتاً بسبب كثرة الطلبات. حاول لاحقاً";
       }
       setErrors({ email: errorMsg });
-=======
-      const response = await window.axios.post('/api/login', formData);
-      localStorage.setItem('auth_token', response.data.token);
-      setSuccessMsg("تم تسجيل الدخول بنجاح! جاري التوجيه...");
-      setTimeout(() => navigate("/dashboard"), 1000);
-    } catch (error) {
-      if (error.response && error.response.data.errors) {
-        setErrors(error.response.data.errors);
-      } else {
-        setErrors({ email: "بيانات الدخول غير صحيحة أو حدث خطأ بالاتصال" });
-      }
->>>>>>> 867bf80af104b836fe59700b37f470fda18ad33a
       setIsSubmitting(false);
     }
   };
