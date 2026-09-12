@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'phone',
         'password',
+        'role',
     ];
 
     /**
@@ -39,8 +40,21 @@ class User extends Authenticatable
      *
      * @var array<string, string>
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
+    public function spaces()
+    {
+        return $this->hasMany(Space::class, 'user_id');
+    }
+
+    public function favorites()
+    {
+        return $this->belongsToMany(Space::class, 'favorites', 'user_id', 'space_id')->withTimestamps();
+    }
 }

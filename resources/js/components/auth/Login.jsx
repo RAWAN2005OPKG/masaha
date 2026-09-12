@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from 'axios';
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +17,9 @@ const loginSchema = z.object({
 
 export default function Login() {
   const navigate = useNavigate();
+  
+
+
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState("");
   // const login = useAuthStore((s) => s.login);
@@ -29,8 +33,8 @@ export default function Login() {
   const onSubmit = async (data) => {
     setServerError("");
     try {
-      // await login(data); // اتصال فعلي بالـ API عبر authService
-      console.log("login payload", data);
+      const response = await axios.post('/api/login', data);
+      localStorage.setItem('auth_token', response.data.token);
       navigate("/dashboard");
     } catch (err) {
       setServerError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
@@ -87,9 +91,32 @@ export default function Login() {
           </p>
         )}
 
-        <Button type="submit" isLoading={isSubmitting}>
+        {/* <Button type="submit" className="bg-red-500" isLoading={isSubmitting}>
           تسجيل الدخول
-        </Button>
+        </Button> */}
+      
+        <button
+      type="submit"
+      className="
+      
+        w-full py-4 px-6 rounded-xl font-bold text-white
+        
+        
+        bg-[#00BBA7] hover:bg-[#009689] 
+     
+        shadow-lg shadow-[#00BBA7]/30 
+        transition-all duration-300 transform active:scale-[0.98]
+        
+      
+        flex items-center justify-center gap-2
+        
+     
+        text-base md:text-lg
+      "
+    >
+      <span>تسجيل الدخول</span>
+      <RiArrowLeftLine className="text-xl" />
+    </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-neutral-500">
@@ -98,6 +125,7 @@ export default function Login() {
           إنشاء حساب جديد
         </Link>
       </p>
+      <p>worfhowgf</p>
     </AuthLayout>
   );
 }

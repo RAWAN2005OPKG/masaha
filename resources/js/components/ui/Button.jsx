@@ -12,10 +12,10 @@ export default function Button({
     "w-full rounded-xl py-2.5 text-sm md:text-base font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed";
 
   const variants = {
-    primary: "bg-brand-500 text-white hover:bg-brand-600",
+    primary: "bg-primary-500 text-white hover:bg-primary-600",
     outline:
       "border border-neutral-200 text-neutral-700 hover:bg-neutral-50",
-    ghost: "text-brand-600 hover:bg-brand-50",
+    ghost: "text-primary-600 hover:bg-primary-50",
   };
 
   return (

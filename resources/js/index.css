@@ -1,37 +1,85 @@
 @import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
-/* ============================================
-   نظام التصميم (Design Tokens)
-   الألوان مستخرجة فعلياً بالبكسل من تصميم فيجما
-   ============================================ */
+
+:root {
+  
+  --primary: #009689;
+  --primary-hover: #0D9488;
+  --secondary-color:#00D5BE;
+  --secondary:#0F172B;
+  --accent: #FFB900;
+  --accent-alt: #FE9A00;
+  --bg-main: #F1F5F9;
+  --text-slate: #90A1B9;
+  --white-soft: #FFFFFFE5;
+  --primary-color:#0D948800;
+   --offer-bg: #FFFBEB;        
+  --offer-border: #FDE68A;   
+  --offer-title: #973C00;    
+  --offer-sub: #BB4D00;    
+  --offer-track: #FFFFFF;   
+  --offer-fill: #FE9A00;     
+  --offer-pill-bg: #FEF3C7;  
+  --offer-pill-text: #92400E; 
+  --offer-badge: #FE9A00; 
+  
+  /* Gradients */
+  --grad-teal: linear-gradient(180deg, #009689 0%, #005F5A 100%);
+  --grad-sidebar: linear-gradient(180deg, #00786F 0%, #009689 100%);
+  --grad-card: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+  --grad-offer: linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%);
+}
+
+body {
+  font-family: 'Cairo', sans-serif;
+  background-color: var(--bg-main);
+  direction: rtl;
+  @apply text-slate-900;
+}
+
+/* Responsive Font System */
+@layer utilities {
+  .text-res-h1 { @apply text-xl md:text-2xl lg:text-3xl font-bold; }
+  .text-res-p { @apply text-xs md:text-sm lg:text-base; }
+  .text-res-small { @apply text-[10px] md:text-xs; }
+}
+
+/* Custom Component Styles */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 @theme {
-  /* الخط */
+ 
   --font-sans: "Cairo", "IBM Plex Sans Arabic", system-ui, sans-serif;
 
-  /* اللون الأساسي (أخضر البراند) - اللوجو / الأزرار / التاب النشط */
+  /* primary-color */
+  --primary-color:#0D948800;
   --color-brand-400: #34d399;
   --color-brand-500: #10b981;
   --color-brand-600: #0ea271;
 
-  /* خلفية البانل الغامق (Hero) وخلفية الكارد داخله */
+  /* brown-bg */
+  --color-icon-bg: #78350F80;
+  /* /panel-bg */
   --color-panel: #0a2019;
   --color-panel-card: #16302a;
 
-  /* ألوان الأيقونات والروابط */
+/* links-color */
   --color-accent-amber: #fbbf24;
   --color-accent-indigo: #818cf8;
   --color-accent-purple: #a855f7;
   --color-accent-coral: #f15b5b;
 
-  /* درجات رمادي محايدة (نصوص، حدود) */
   --color-neutral-50: #f9fafb;
   --color-neutral-100: #f3f4f6;
   --color-neutral-300: #d1d5db;
   --color-neutral-500: #6b7280;
   --color-neutral-900: #111827;
 
-  /* أحجام خط مريحة على جميع الشاشات */
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.4;
   --text-sm: 0.875rem;
@@ -47,7 +95,6 @@
   --text-3xl: 1.875rem;
   --text-3xl--line-height: 1.3;
 
-  /* استدارة الحواف */
   --radius-xl: 1rem;
   --radius-2xl: 1.25rem;
 }
@@ -60,7 +107,10 @@ body {
   @apply bg-neutral-50 text-neutral-900 font-sans antialiased;
 }
 
-/* إصلاح خلفية autofill الصفراء بالمتصفح */
 input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0px 1000px white inset;
 }
+
+
+
+

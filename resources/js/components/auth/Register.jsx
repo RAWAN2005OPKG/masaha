@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,11 +46,15 @@ export default function Register() {
   const onSubmit = async (data) => {
     setServerError("");
     try {
-      // await authService.register(data);
-      console.log("register payload", data);
-      navigate("/login");
+      const response = await axios.post('/api/register', data);
+      localStorage.setItem('auth_token', response.data.token);
+      navigate("/dashboard");
     } catch (err) {
-      setServerError("حدث خطأ أثناء إنشاء الحساب، حاول مرة أخرى");
+      if (err.response?.data?.errors) {
+        setServerError(Object.values(err.response.data.errors).flat().join(" "));
+      } else {
+        setServerError("حدث خطأ أثناء إنشاء الحساب، حاول مرة أخرى");
+      }
     }
   };
 
