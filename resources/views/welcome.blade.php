@@ -6,7 +6,6 @@
     <title>مساحة</title>
     @viteReactRefresh
     @vite(['resources/js/main.jsx'])
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
     <div id="root"></div>
