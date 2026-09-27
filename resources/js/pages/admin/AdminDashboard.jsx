@@ -6,20 +6,30 @@ import PageHeader from '../../components/layout/PageHeader';
 const AdminDashboard = () => {
   const [totalUsers, setTotalUsers] = useState(0); 
   const [usersGrowth, setUsersGrowth] = useState(0);
+  const [activeBookings, setActiveBookings] = useState(0);
+  const [openSpaces, setOpenSpaces] = useState('0/0');
+  const [monthlyRevenue, setMonthlyRevenue] = useState('₪0');
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     // Fetch real stats
     window.axios.get('/api/admin/dashboard-stats').then(res => {
-      setTotalUsers(res.data.total_users);
-      setUsersGrowth(res.data.users_growth);
+      setTotalUsers(res.data.total_users || 0);
+      setUsersGrowth(res.data.users_growth || 0);
+      setActiveBookings(res.data.active_bookings || 0);
+      setOpenSpaces(res.data.open_spaces || '0/0');
+      setMonthlyRevenue(res.data.monthly_revenue || '₪0');
+      if (res.data.notifications) {
+        setNotifications(res.data.notifications);
+      }
     }).catch(err => console.log(err));
   }, []);
 
   const stats = [
     { label: 'إجمالي المستخدمين', value: totalUsers, change: `${usersGrowth >= 0 ? '+' : ''} ${usersGrowth}% هذا الشهر`, icon: <RiUserLine />, color: 'bg-emerald-500', link: '/admin-dashboard/users' },
-    { label: 'الحجوزات النشطة', value: '84', change: 'الآن لحظة بلحظة', icon: <RiCalendarLine />, color: 'bg-blue-500' },
-    { label: 'المساحات المفتوحة', value: '3/4', change: 'مساحة نشطة', icon: <RiBuildingLine />, color: 'bg-amber-500' },
-    { label: 'إيراد الشهر', value: '₪85,400', change: '+ 23% عن السابق', icon: <RiLineChartLine />, color: 'bg-violet-500' },
+    { label: 'الحجوزات النشطة', value: activeBookings, change: 'الآن لحظة بلحظة', icon: <RiCalendarLine />, color: 'bg-blue-500' },
+    { label: 'المساحات المفتوحة', value: openSpaces, change: 'مساحة نشطة', icon: <RiBuildingLine />, color: 'bg-amber-500', link: '/admin-dashboard/spaces' },
+    { label: 'إيراد الشهر', value: monthlyRevenue, change: 'حسب الحجوزات الفعلية', icon: <RiLineChartLine />, color: 'bg-violet-500' },
   ];
 
   return (
@@ -66,19 +76,19 @@ const AdminDashboard = () => {
             <h3 className="font-black text-slate-800 flex items-center gap-2">الإشعارات المهمة</h3>
         </div>
         <div className="divide-y divide-slate-50">
-            {[
-                { text: 'مساحة الريادة وصلت لطاقتها القصوى (48/50)', time: 'منذ 15 دقيقة', color: 'bg-amber-500' },
-                { text: 'مستخدم جديد انضم للمنصة: محمد أبو عمر', time: 'منذ 30 دقيقة', color: 'bg-blue-500' },
-                { text: 'انتهت مدة العرض بنجاح MONTHLY40 - 100 استخدام', time: 'منذ ساعتين', color: 'bg-emerald-500' },
-            ].map((n, i) => (
-                <div key={i} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
+            {notifications && notifications.length > 0 ? (
+              notifications.map((n, i) => (
+                <div key={n.id || i} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${n.color}`}></div>
+                        <div className={`w-2 h-2 rounded-full ${n.color || 'bg-blue-500'}`}></div>
                         <p className="text-sm font-bold text-slate-700">{n.text}</p>
                     </div>
                     <span className="text-[10px] text-slate-400 font-bold">{n.time}</span>
                 </div>
-            ))}
+              ))
+            ) : (
+              <p className="p-8 text-center text-xs text-slate-400 font-bold">لا توجد إشعارات مهمة حالياً</p>
+            )}
         </div>
       </section>
     </div>

@@ -137,8 +137,11 @@ class AuthController extends Controller
             ->where('token', $request->code)
             ->first();
             
-        if (!$resetRequest) {
-            return response()->json(['message' => 'رمز التحقق غير صحيح أو منتهي الصلاحية.'], 400);
+        if (!$resetRequest || \Carbon\Carbon::parse($resetRequest->created_at)->addMinutes(15)->isPast()) {
+            if ($resetRequest) {
+                \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            }
+            return response()->json(['message' => 'رمز التحقق غير صحيح أو انتهت صلاحيته (صالح لمدة 15 دقيقة فقط).'], 400);
         }
         
         return response()->json(['message' => 'رمز التحقق صحيح.']);
@@ -157,8 +160,11 @@ class AuthController extends Controller
             ->where('token', $request->code)
             ->first();
             
-        if (!$resetRequest) {
-            return response()->json(['message' => 'رمز التحقق غير صحيح أو منتهي الصلاحية.'], 400);
+        if (!$resetRequest || \Carbon\Carbon::parse($resetRequest->created_at)->addMinutes(15)->isPast()) {
+            if ($resetRequest) {
+                \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            }
+            return response()->json(['message' => 'رمز التحقق غير صحيح أو انتهت صلاحيته (صالح لمدة 15 دقيقة فقط).'], 400);
         }
         
         $user = User::where('email', $request->email)->first();

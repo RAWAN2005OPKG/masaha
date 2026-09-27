@@ -23,6 +23,10 @@ class User extends Authenticatable
         'phone',
         'password',
         'role',
+        'status',
+        'owner_id',
+        'avatar',
+        'rating',
     ];
 
     /**
@@ -56,5 +60,15 @@ class User extends Authenticatable
     public function favorites()
     {
         return $this->belongsToMany(Space::class, 'favorites', 'user_id', 'space_id')->withTimestamps();
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'user_id');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id');
     }
 }

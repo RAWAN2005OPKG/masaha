@@ -4,7 +4,6 @@ import { HiOutlineMail, HiOutlineLockClosed, HiEye, HiEyeOff } from "react-icons
 import AuthLayout from "../../components/auth/AuthLayout";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import { auth, signInWithEmailAndPassword } from "../../firebase"; // استيراد إعدادات فايربيز
 
 export default function Login() {
   const navigate = useNavigate();
@@ -48,21 +47,30 @@ export default function Login() {
     setErrors({});
 
     try {
-      // ربط تسجيل الدخول مع Firebase
-      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
-
-      localStorage.setItem('auth_token', user.accessToken);
+      const response = await window.axios.post('/api/login', formData);
+      const { token, user } = response.data;
+      
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('user_role', user.role);
+      window.axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
       setSuccessMsg("تم تسجيل الدخول بنجاح! جاري التوجيه...");
-      setTimeout(() => navigate("/dashboard"), 1000);
+      
+      setTimeout(() => {
+        if (user.role === 'admin') {
+          navigate("/admin-dashboard");
+        } else if (user.role === 'owner') {
+          navigate("/owner-dashboard");
+        } else if (user.role === 'receptionist') {
+          navigate("/receptionist-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+      }, 1000);
+      
     } catch (error) {
-      let errorMsg = "بيانات الدخول غير صحيحة أو حدث خطأ بالاتصال";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        errorMsg = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMsg = "تم حظر المحاولات مؤقتاً بسبب كثرة الطلبات. حاول لاحقاً";
-      }
+      console.error(error);
+      const errorMsg = error.response?.data?.message || "بيانات الدخول غير صحيحة أو حدث خطأ بالاتصال";
       setErrors({ email: errorMsg });
       setIsSubmitting(false);
     }

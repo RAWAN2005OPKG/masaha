@@ -23,6 +23,10 @@
   --offer-pill-bg: #FEF3C7;  
   --offer-pill-text: #92400E; 
   --offer-badge: #FE9A00; 
+
+  /* Receptionist Palette */
+  --receptionist-primary: #0D9488;
+  --receptionist-secondary: #0F766E; 
   
   /* Gradients */
   --grad-teal: linear-gradient(180deg, #009689 0%, #005F5A 100%);
@@ -58,6 +62,15 @@ body {
 
   /* primary-color */
   --primary-color:#0D948800;
+  --color-primary-50: #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-200: #99f6e4;
+  --color-primary-300: #5eead4;
+  --color-primary-400: #2dd4bf;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  --color-primary-700: #0f766e;
+  
   --color-brand-400: #34d399;
   --color-brand-500: #10b981;
   --color-brand-600: #0ea271;

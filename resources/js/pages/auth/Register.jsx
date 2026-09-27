@@ -11,7 +11,6 @@ import {
 import AuthLayout from "../../components/auth/AuthLayout";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import { auth, db, createUserWithEmailAndPassword, doc, setDoc } from "../../firebase"; // استيراد دوال الفايربيز والفايرستور
 
 export default function Register() {
   const navigate = useNavigate();
@@ -74,32 +73,35 @@ export default function Register() {
     setErrors({});
 
     try {
-      console.log("1. جاري إنشاء الحساب في Authentication...");
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      const user = userCredential.user;
-      console.log("2. تم إنشاء الحساب بنجاح، الـ UID هو:", user.uid);
-
-      console.log("3. جاري حفظ البيانات في Firestore...");
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
+      const response = await window.axios.post('/api/register', {
         fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
-        createdAt: new Date().toISOString()
+        password: formData.password,
       });
-      console.log("4. تم حفظ البيانات في Firestore بنجاح تام!");
 
-      localStorage.setItem('auth_token', user.accessToken);
-      alert("تم إنشاء الحساب وحفظ البيانات بنجاح!");
+      const { token, user } = response.data;
+      if (token) {
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('user_role', user?.role || 'user');
+        window.axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
+
+      alert("تم إنشاء الحساب بنجاح!");
       navigate("/dashboard");
     } catch (error) {
-      console.error("❌ خطأ تفصيلي أثناء التنفيذ:", error);
-      alert("خطأ: " + error.message);
-      setErrors({ email: error.message });
+      console.error("❌ خطأ أثناء التسجيل:", error);
+      const serverErrors = error.response?.data?.errors;
+      if (serverErrors) {
+        const formatted = {};
+        for (const [key, msgs] of Object.entries(serverErrors)) {
+          formatted[key] = Array.isArray(msgs) ? msgs[0] : msgs;
+        }
+        setErrors(formatted);
+      } else {
+        const errorMsg = error.response?.data?.message || "حدث خطأ أثناء إنشاء الحساب، يرجى المحاولة لاحقاً.";
+        setErrors({ email: errorMsg });
+      }
     } finally {
       setIsSubmitting(false);
     }

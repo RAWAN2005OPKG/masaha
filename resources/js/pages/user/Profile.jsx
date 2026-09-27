@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { RiEdit2Line, RiHeartFill, RiCopperCoinLine, RiTrophyLine, RiLogoutBoxRLine } from 'react-icons/ri';
 import { useNavigate } from 'react-router-dom';
 import EditProfileModal from '../../components/modals/EditProfileModal';
-import axios from 'axios';
 
 const Profile = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      await axios.post('/api/logout');
+      await window.axios.post('/api/logout');
     } catch (err) {
       console.error(err);
     } finally {
@@ -25,18 +24,23 @@ const Profile = () => {
     email: '',
     memberSince: '',
     phone: '',
+    points: 0,
+    level: 'المستوى البرونزي',
+    nextLevel: 'المستوى الفضي',
+    pointsNeeded: 100,
+    progressPercent: 0,
   });
 
   const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
     // Fetch favorites
-    axios.get('/api/user/favorites')
+    window.axios.get('/api/user/favorites')
       .then(res => setFavorites(res.data))
       .catch(err => console.error(err));
 
     // Fetch user...
-    axios.get('/api/user')
+    window.axios.get('/api/user')
       .then(res => {
         const data = res.data;
         const date = new Date(data.created_at);
@@ -49,6 +53,11 @@ const Profile = () => {
           memberSince: formattedDate,
           avatarUrl: data.avatar || null,
           rating: data.rating || null,
+          points: data.points ?? 0,
+          level: data.level || 'المستوى البرونزي',
+          nextLevel: data.next_level || 'المستوى الفضي',
+          pointsNeeded: data.points_needed ?? 100,
+          progressPercent: data.progress_percent ?? 0,
         });
       })
       .catch(err => {
@@ -69,7 +78,7 @@ const Profile = () => {
     if (updatedUser.rating) formData.append('rating', updatedUser.rating);
     if (updatedUser.avatarFile) formData.append('avatar', updatedUser.avatarFile);
 
-    axios.post('/api/user', formData, {
+    window.axios.post('/api/user', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
       .then(res => {
@@ -155,24 +164,27 @@ const Profile = () => {
           <div className="flex justify-between items-center relative z-10">
               <div className="space-y-1">
                 <h3 className="font-black text-xl flex items-center gap-2"><RiTrophyLine className="text-warning" /> النقاط والمكافآت</h3>
-                <p className="text-[10px] text-white/70 font-bold uppercase tracking-widest">المستوى الذهبي</p>
+                <p className="text-[10px] text-white/70 font-bold uppercase tracking-widest">{user.level}</p>
               </div>
               <div className="text-right">
-                  <span className="text-4xl font-black">240</span>
-                  <p className="text-[10px] font-bold">نقطة</p>
+                  <span className="text-4xl font-black">{user.points}</span>
+                  <p className="text-[10px] font-bold">نقطة مكتسبة</p>
               </div>
           </div>
 
           <div className="space-y-2 relative z-10">
               <div className="flex justify-between text-[10px] font-bold">
-                  <span>تحتاج 60 نقطة للوصول للمستوى الماسي 💎</span>
-                  <span>80%</span>
+                  <span>{user.pointsNeeded > 0 ? `تحتاج ${user.pointsNeeded} نقطة للوصول إلى ${user.nextLevel}` : 'وصلت لأعلى المستويات 👑'}</span>
+                  <span>{user.progressPercent}%</span>
               </div>
               <div className="w-full h-2.5 bg-black/20 rounded-full overflow-hidden border border-white/10">
-                  <div className="bg-warning h-full w-[80%] rounded-full shadow-[0_0_15px_#FFB90066]"></div>
+                  <div
+                    className="bg-warning h-full rounded-full shadow-[0_0_15px_#FFB90066] transition-all duration-700"
+                    style={{ width: `${user.progressPercent}%` }}
+                  />
               </div>
           </div>
-          <p className="text-[10px] text-center font-bold opacity-60 underline decoration-white/20">يحدث تلقائياً مع كل حجز ✓</p>
+          <p className="text-[10px] text-center font-bold opacity-60 underline decoration-white/20">تزداد نقاطك تلقائياً مع كل حجز نشط ومؤكد ✓</p>
       </div>
 
       {/* Site Rating */}

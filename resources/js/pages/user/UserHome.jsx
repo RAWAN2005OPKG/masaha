@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { RiMapPinLine, RiLayoutGridLine, RiStarFill , RiHome4Fill,RiHeartFill } from 'react-icons/ri';
 
@@ -7,6 +7,7 @@ const UserHome = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState({ name: 'جاري التحميل...', email: '' });
   const [spaces, setSpaces] = useState([]);
+  const [offers, setOffers] = useState([]);
 
   useEffect(() => {
     axios.get('/api/user')
@@ -17,6 +18,12 @@ const UserHome = () => {
 
     axios.get('/api/spaces')
       .then(res => setSpaces(res.data))
+      .catch(err => console.error(err));
+
+    axios.get('/api/offers')
+      .then(res => {
+        if (Array.isArray(res.data)) setOffers(res.data);
+      })
       .catch(err => console.error(err));
   }, []);
 
@@ -77,10 +84,10 @@ const UserHome = () => {
           <h2 className="text-xl font-bold flex items-center gap-2 text-[#0F172B]">
             <RiLayoutGridLine className="text-[#009689]" /> الأكثر استخداماً
           </h2>
-          <button 
-            onClick={() => setSelectedCategory('الكل')}
-            className="bg-[#009689] hover:bg-[#0D9488] text-white text-xs font-bold px-5 py-2 rounded-xl transition-all">
-            عرض كل المساحات
+          <button className="bg-[#009689] hover:bg-[#0D9488] text-white text-xs font-bold px-5 py-2 rounded-xl transition-all cursor-pointer">
+            <Link to="/dashboard/explore" className="flex items-center gap-1 text-white">
+              عرض كل المساحات
+            </Link>
           </button>
         </div>
 
@@ -139,7 +146,10 @@ const UserHome = () => {
       </p>
 
       <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-         <button className="text-[11px] font-bold text-[#009689] hover:underline flex items-center gap-1">
+         <button 
+           onClick={() => navigate(`/dashboard/explore/${space.id}`)}
+           className="text-[11px] font-bold text-[#009689] hover:underline flex items-center gap-1 cursor-pointer"
+         >
           التفاصيل ←
         </button>
         <span className="text-[10px] text-slate-400 font-medium">
@@ -153,87 +163,80 @@ const UserHome = () => {
       </section>
 
       {/* Active Offers Section */}
-   <section >
- 
-  <div className="flex justify-start pb-3 mb-6 border-b border-dotted border-slate-200">
-    <h3 className="font-bold text-slate-800 text-lg">العروض النشطة</h3>
-  </div>
+      <section>
+        <div className="flex justify-between items-center pb-3 mb-6 border-b border-dotted border-slate-200">
+          <h3 className="font-bold text-slate-800 text-lg">العروض النشطة</h3>
+          <Link to="/dashboard/offers" className="text-xs text-brand-600 font-bold hover:underline">
+            عرض الكل {offers.length > 0 ? `(${offers.length})` : ''}
+          </Link>
+        </div>
 
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-   
-    <div
-      className="p-6 rounded-[24px] border"
-      style={{ background: 'var(--offer-bg)', borderColor: 'var(--offer-border)' }}
-    >
-      <div className="flex justify-between items-start gap-3">
-        <div className="flex-1">
-          <h4 className="font-bold text-base" style={{ color: 'var(--offer-title)' }}>
-            خصم %30 على الحجوزات الأسبوعية
-          </h4>
-
-          <span
-            className="inline-block mt-2 text-xs font-bold px-2 py-0.5 rounded-md"
-            style={{ background: 'var(--offer-pill-bg)', color: 'var(--offer-pill-text)' }}
-          >
-            WEEK30
-          </span>
-
-          <p className="text-xs mt-2" style={{ color: 'var(--offer-sub)' }}>
-            ينتهي في: ٢٠٢٤/١٢/٣١
-          </p>
-
-          <div
-            className="mt-4 w-40 h-1.5 rounded-full overflow-hidden"
-            style={{ background: 'var(--offer-track)' }}
-          >
-            <div className="h-full w-[45%]" style={{ background: 'var(--offer-fill)' }}></div>
+        {offers.length === 0 ? (
+          <div className="bg-white rounded-3xl p-8 text-center border border-slate-100 shadow-sm">
+            <p className="text-sm font-bold text-slate-400">لا توجد عروض ترويجية نشطة حالياً</p>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {offers.map((offer) => {
+              const used = offer.used || 0;
+              const limit = offer.limit || 100;
+              const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+              return (
+                <div
+                  key={offer.id}
+                  className="p-6 rounded-[24px] border"
+                  style={{ background: 'var(--offer-bg)', borderColor: 'var(--offer-border)' }}
+                >
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex-1">
+                      <h4 className="font-bold text-base" style={{ color: 'var(--offer-title)' }}>
+                        {offer.title}
+                      </h4>
 
-          <p className="text-xs text-slate-400 mt-2">45/100 استخدام</p>
-        </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span
+                          className="inline-block text-xs font-bold px-2 py-0.5 rounded-md font-mono"
+                          style={{ background: 'var(--offer-pill-bg)', color: 'var(--offer-pill-text)' }}
+                        >
+                          {offer.code}
+                        </span>
+                        {offer.spaceName && (
+                          <span className="text-[10px] font-bold text-slate-500">
+                            • {offer.spaceName}
+                          </span>
+                        )}
+                      </div>
 
-        <span
-          className="shrink-0 text-white text-sm font-extrabold px-2.5 py-1 rounded-lg"
-          style={{ background: 'var(--offer-badge)' }}
-        >
-          -30%
-        </span>
-      </div>
-    </div>
+                      <p className="text-xs mt-2" style={{ color: 'var(--offer-sub)' }}>
+                        ينتهي في: {offer.expiry || offer.date || 'مستمر'}
+                      </p>
 
-    
-    <div
-      className="p-6 rounded-[24px] border"
-      style={{ background: 'var(--offer-bg)', borderColor: 'var(--offer-border)' }}
-    >
-      <div>
-        <h4 className="font-bold text-base" style={{ color: 'var(--offer-title)' }}>
-          ساعة مجانية مع كل حجز ٤ ساعات
-        </h4>
+                      <div
+                        className="mt-4 w-40 h-1.5 rounded-full overflow-hidden"
+                        style={{ background: 'var(--offer-track)' }}
+                      >
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${pct}%`, background: 'var(--offer-fill)' }}
+                        ></div>
+                      </div>
 
-        <span
-          className="inline-block mt-2 text-xs font-bold px-2 py-0.5 rounded-md"
-          style={{ background: 'var(--offer-pill-bg)', color: 'var(--offer-pill-text)' }}
-        >
-          FREE1H
-        </span>
+                      <p className="text-xs text-slate-400 mt-2">{used}/{limit} استخدام</p>
+                    </div>
 
-        <p className="text-xs mt-2" style={{ color: 'var(--offer-sub)' }}>
-          ينتهي في: ٢٠٢٤/١٢/٢٥
-        </p>
-
-        <div
-          className="mt-4 w-40 h-1.5 rounded-full overflow-hidden"
-          style={{ background: 'var(--offer-track)' }}
-        >
-          <div className="h-full w-[89%]" style={{ background: 'var(--offer-fill)' }}></div>
-        </div>
-
-        <p className="text-xs text-slate-400 mt-2">89/100 استخدام</p>
-      </div>
-    </div>
-  </div>
-</section>
+                    <span
+                      className="shrink-0 text-white text-sm font-extrabold px-2.5 py-1 rounded-lg"
+                      style={{ background: 'var(--offer-badge)' }}
+                    >
+                      {offer.discount}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 };

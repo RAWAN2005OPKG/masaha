@@ -346,4 +346,8 @@ const SpaceOwners = () => {
   );
 };
 
+export const EditSpaceOwner = () => {
+  return <SpaceOwners />;
+};
+
 export default SpaceOwners;

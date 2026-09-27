@@ -26,7 +26,6 @@ const features = [
 export default function AuthLayout({ children }) {
   return (
     <div className="flex min-h-screen w-full flex-col md:flex-row" dir="rtl">
-      {/* البانل الغامق - يظهر من md فما فوق، على الموبايل بيختفي عشان الفورم ياخد الأولوية */}
       <div className="relative hidden w-full flex-col justify-center bg-panel px-10 py-12 md:flex md:w-1/2 lg:px-20">
         <div className="mx-auto w-full max-w-md">
           <div className="mb-10 flex items-center gap-2">
@@ -70,7 +69,6 @@ export default function AuthLayout({ children }) {
         </div>
       </div>
 
-      {/* البانل الأبيض - الفورم */}
       <div className="relative flex w-full flex-1 flex-col items-center justify-center bg-white px-6 py-10 sm:px-10 md:w-1/2">
         <div className="flex w-full max-w-sm flex-col items-center">
           <AuthTabs />

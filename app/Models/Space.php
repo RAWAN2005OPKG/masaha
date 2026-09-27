@@ -13,7 +13,7 @@ class Space extends Model
         'user_id', 'name', 'phone', 'region', 'internet_speed', 
         'total_seats', 'electricity', 'price_per_hour', 'services', 
         'sub_start_date', 'sub_duration_months', 'sub_end_date', 
-        'sub_price', 'is_manual_disabled'
+        'sub_price', 'is_manual_disabled', 'emergency_reason'
     ];
 
     protected $casts = [
@@ -30,5 +30,25 @@ class Space extends Model
     public function favoritedBy()
     {
         return $this->belongsToMany(User::class, 'favorites', 'space_id', 'user_id')->withTimestamps();
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'space_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(SpaceReview::class, 'space_id');
+    }
+
+    public function events()
+    {
+        return $this->hasMany(Event::class, 'space_id');
+    }
+
+    public function offers()
+    {
+        return $this->hasMany(Offer::class, 'space_id');
     }
 }
