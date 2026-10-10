@@ -9,6 +9,7 @@ import {
   RiCheckLine,
   RiRestartLine,
   RiLoader4Line,
+  RiTimeLine,
 } from "react-icons/ri";
 import PageHeader from "../../components/layout/PageHeader";
 
@@ -19,18 +20,50 @@ const ACTIONS = [
   { id: 4, label: "حريق أو طارئ أمني", icon: <RiFireLine /> },
 ];
 
+// Format remaining time as "X ساعة Y دقيقة"
+const formatRemaining = (isoString) => {
+  if (!isoString) return null;
+  const diff = new Date(isoString) - new Date();
+  if (diff <= 0) return null;
+  const totalMins = Math.floor(diff / 60000);
+  const hrs = Math.floor(totalMins / 60);
+  const mins = totalMins % 60;
+  if (hrs > 0 && mins > 0) return `${hrs} ساعة و${mins} دقيقة`;
+  if (hrs > 0) return `${hrs} ساعة`;
+  return `${mins} دقيقة`;
+};
+
 const EmergencyManagement = () => {
   const [closed, setClosed] = useState(false);
   const [emergencyReason, setEmergencyReason] = useState("");
+  const [emergencyUntil, setEmergencyUntil] = useState(null);
   const [spaceName, setSpaceName] = useState("");
   const [customReason, setCustomReason] = useState("");
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
-  const [notified, setNotified] = useState(null);
+
+  // Per-action state: { actionId: { hours: '', sending: false, sent: false } }
+  const [actionState, setActionState] = useState(() =>
+    Object.fromEntries(ACTIONS.map((a) => [a.id, { hours: "", sending: false, sent: false }]))
+  );
 
   useEffect(() => {
     fetchSpaceStatus();
   }, []);
+
+  // Countdown ticker
+  useEffect(() => {
+    if (!emergencyUntil) return;
+    const timer = setInterval(() => {
+      if (new Date(emergencyUntil) <= new Date()) {
+        setClosed(false);
+        setEmergencyReason("");
+        setEmergencyUntil(null);
+        clearInterval(timer);
+      }
+    }, 30000); // check every 30s
+    return () => clearInterval(timer);
+  }, [emergencyUntil]);
 
   const fetchSpaceStatus = () => {
     setLoading(true);
@@ -39,6 +72,7 @@ const EmergencyManagement = () => {
       .then((res) => {
         setClosed(Boolean(res.data.is_closed || res.data.is_manual_disabled));
         setEmergencyReason(res.data.emergency_reason || "");
+        setEmergencyUntil(res.data.emergency_until || null);
         setSpaceName(res.data.name || "المساحة");
       })
       .catch((err) => console.error("Error fetching space status:", err))
@@ -54,6 +88,7 @@ const EmergencyManagement = () => {
       const res = await axios.post("/api/owner/space/emergency-toggle", payload);
       setClosed(Boolean(res.data.is_closed));
       setEmergencyReason(res.data.emergency_reason || "");
+      setEmergencyUntil(res.data.emergency_until || null);
       if (res.data.is_closed) {
         alert("تم إغلاق المساحة طارئاً وإرسال التنبيهات لكافة الرواد بنجاح.");
       } else {
@@ -67,19 +102,56 @@ const EmergencyManagement = () => {
     }
   };
 
+  const setHours = (actionId, value) => {
+    setActionState((prev) => ({
+      ...prev,
+      [actionId]: { ...prev[actionId], hours: value },
+    }));
+  };
+
   const notify = async (action) => {
+    const state = actionState[action.id];
+    const hours = parseFloat(state.hours) || null;
+
+    setActionState((prev) => ({
+      ...prev,
+      [action.id]: { ...prev[action.id], sending: true },
+    }));
+
     try {
-      setNotified(action.id);
-      await axios.post("/api/owner/space/notify-emergency", {
+      const res = await axios.post("/api/owner/space/notify-emergency", {
         reason: action.label,
+        hours: hours || undefined,
       });
-      setTimeout(() => setNotified(null), 3000);
+
+      // If the space was closed via this notification, update UI
+      if (res.data.is_closed) {
+        setClosed(true);
+        setEmergencyReason(action.label);
+        setEmergencyUntil(res.data.emergency_until || null);
+      }
+
+      setActionState((prev) => ({
+        ...prev,
+        [action.id]: { ...prev[action.id], sending: false, sent: true },
+      }));
+      setTimeout(() => {
+        setActionState((prev) => ({
+          ...prev,
+          [action.id]: { ...prev[action.id], sent: false },
+        }));
+      }, 4000);
     } catch (err) {
       console.error(err);
       alert("حدث خطأ أثناء إرسال الإشعار.");
-      setNotified(null);
+      setActionState((prev) => ({
+        ...prev,
+        [action.id]: { ...prev[action.id], sending: false },
+      }));
     }
   };
+
+  const remaining = formatRemaining(emergencyUntil);
 
   return (
     <div dir="rtl" className="space-y-6 pb-20">
@@ -114,9 +186,17 @@ const EmergencyManagement = () => {
               </h3>
               <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed mt-1 font-bold">
                 {closed
-                  ? `سبب التوقف الحالي: (${emergencyReason || "إجراء طارئ مؤقت"}). اضغط الزر أدناه لإلغاء الإيقاف وإعادة فتح المساحة للرواد فوراً.`
+                  ? `سبب التوقف الحالي: (${emergencyReason || "إجراء طارئ مؤقت"}).${remaining ? ` ستُفتح تلقائياً خلال ${remaining}.` : ""} اضغط الزر أدناه لإلغاء الإيقاف وإعادة فتح المساحة فوراً.`
                   : "عند تفعيل الإغلاق الطارئ، سيتم تحويل حالة المساحة فوراً إلى مغلقة، ويتوقف استقبال الحجوزات مع إشعار كافة المستخدمين."}
               </p>
+
+              {/* Remaining time badge */}
+              {closed && remaining && (
+                <div className="mt-3 inline-flex items-center gap-2 bg-red-100 text-red-600 text-xs font-bold px-4 py-2 rounded-full">
+                  <RiTimeLine size={14} />
+                  تُفتح تلقائياً خلال: {remaining}
+                </div>
+              )}
             </div>
 
             {!closed && (
@@ -162,46 +242,72 @@ const EmergencyManagement = () => {
 
           {/* Quick Emergency Action Notifications */}
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h3 className="font-black text-slate-800 text-sm">إرسال إشعارات طارئة سريعة</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5 font-bold">
-                  إرسال تنبيه فوري لجميع الرواد والاستقبال بشأن أي مستجد
-                </p>
-              </div>
+            <div className="px-6 py-4 border-b border-slate-100">
+              <h3 className="font-black text-slate-800 text-sm">إرسال إشعارات طارئة سريعة</h3>
+              <p className="text-[11px] text-slate-400 mt-0.5 font-bold">
+                حدد مدة التوقف (اختياري) ثم أرسل التنبيه — ستُغلق المساحة تلقائياً للمدة المحددة
+              </p>
             </div>
 
             <div className="divide-y divide-slate-50">
-              {ACTIONS.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center text-lg">
-                      {a.icon}
-                    </span>
-                    <span className="text-sm font-bold text-slate-700">{a.label}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => notify(a)}
-                    className={`px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                      notified === a.id
-                        ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                        : "bg-red-50 text-red-500 hover:bg-red-100"
-                    }`}
+              {ACTIONS.map((a) => {
+                const st = actionState[a.id];
+                return (
+                  <div
+                    key={a.id}
+                    className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors flex-wrap"
                   >
-                    {notified === a.id ? (
-                      <>
-                        <RiCheckLine size={14} /> تم الإرسال
-                      </>
-                    ) : (
-                      "إرسال إشعار"
-                    )}
-                  </button>
-                </div>
-              ))}
+                    {/* Icon + Label */}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <span className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center text-lg shrink-0">
+                        {a.icon}
+                      </span>
+                      <span className="text-sm font-bold text-slate-700">{a.label}</span>
+                    </div>
+
+                    {/* Hours input */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <input
+                        type="number"
+                        min="0.25"
+                        max="72"
+                        step="0.25"
+                        value={st.hours}
+                        onChange={(e) => setHours(a.id, e.target.value)}
+                        placeholder="ساعات"
+                        className="w-20 text-center text-xs font-bold px-2 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 outline-none focus:border-red-400 transition"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold">ساعة</span>
+                    </div>
+
+                    {/* Send button */}
+                    <button
+                      type="button"
+                      onClick={() => notify(a)}
+                      disabled={st.sending || st.sent}
+                      className={`px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                        st.sent
+                          ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                          : st.sending
+                          ? "bg-slate-100 text-slate-400"
+                          : "bg-red-50 text-red-500 hover:bg-red-100"
+                      }`}
+                    >
+                      {st.sent ? (
+                        <>
+                          <RiCheckLine size={14} /> تم الإرسال
+                        </>
+                      ) : st.sending ? (
+                        <>
+                          <RiLoader4Line className="animate-spin" size={14} /> جاري...
+                        </>
+                      ) : (
+                        "إرسال إشعار"
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </>

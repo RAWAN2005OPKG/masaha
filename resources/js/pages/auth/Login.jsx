@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { HiOutlineMail, HiOutlineLockClosed, HiEye, HiEyeOff } from "react-icons/hi";
 import AuthLayout from "../../components/auth/AuthLayout";
 import Input from "../../components/ui/Input";
@@ -126,13 +126,12 @@ export default function Login() {
             />
             تذكرني لمدة 30 يوماً
           </label>
-          <button
-            type="button"
+          <Link
+            to="/forgot-password"
             className="font-medium text-accent-coral hover:underline"
-            title="لسا مو مفعّلة بهاي النسخة التجريبية"
           >
             نسيت كلمة المرور؟
-          </button>
+          </Link>
         </div>
 
         {successMsg && (

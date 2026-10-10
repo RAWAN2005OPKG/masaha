@@ -9,7 +9,8 @@ import {
   RiStarLine, 
   RiLoader4Line,
   RiUserStarLine,
-  RiCheckboxCircleFill
+  RiCheckboxCircleFill,
+  RiAlertLine
 } from 'react-icons/ri';
 import PageHeader from '../../components/layout/PageHeader';
 
@@ -91,32 +92,57 @@ const UserExplore = () => {
               ? space.servicesList[0]
               : 'مكاتب مجهزة';
 
+            const isClosed = Boolean(space.is_manual_disabled);
+            const emergencyReason = space.emergency_reason;
+
             return (
               <div
                 key={space.id}
                 onClick={() => navigate(`/dashboard/explore/${space.id}`)}
-                className="bg-white rounded-[32px] overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer group"
+                className={`rounded-[32px] overflow-hidden border shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer group ${
+                  isClosed
+                    ? 'bg-red-50/40 border-red-200 opacity-90'
+                    : 'bg-white border-slate-100'
+                }`}
               >
+                {/* Emergency Banner */}
+                {isClosed && (
+                  <div className="flex items-center gap-2 bg-red-500 text-white px-5 py-2.5 text-xs font-bold">
+                    <RiAlertLine size={15} className="shrink-0" />
+                    <span>
+                      مغلق مؤقتاً
+                      {emergencyReason ? ` — ${emergencyReason}` : ''}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex flex-col lg:flex-row">
                   <div className="flex-1 p-6 md:p-8 space-y-6">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-3">
                           <h2 className="text-2xl font-black text-slate-800 group-hover:text-[#009689] transition-colors">{space.name}</h2>
-                          {/* Status Badge: متاح */}
-                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 text-xs font-bold px-3 py-1 rounded-full border border-emerald-100">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            متاح
-                          </span>
+                          {/* Status Badge */}
+                          {isClosed ? (
+                            <span className="inline-flex items-center gap-1 bg-red-50 text-red-500 text-xs font-bold px-3 py-1 rounded-full border border-red-200">
+                              <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                              مغلق مؤقتاً
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 text-xs font-bold px-3 py-1 rounded-full border border-emerald-100">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                              متاح
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-400 flex items-center gap-1 font-bold">
                           {space.region}
                         </p>
                       </div>
 
-                      <div className="bg-[#009689]/10 px-4 py-2 rounded-2xl text-center">
-                        <span className="text-xl font-black text-[#009689]">{space.price}₪</span>
-                        <p className="text-[9px] text-[#009689] font-bold uppercase">/ ساعة</p>
+                      <div className={`px-4 py-2 rounded-2xl text-center ${isClosed ? 'bg-slate-100' : 'bg-[#009689]/10'}`}>
+                        <span className={`text-xl font-black ${isClosed ? 'text-slate-400' : 'text-[#009689]'}`}>{space.price}₪</span>
+                        <p className={`text-[9px] font-bold uppercase ${isClosed ? 'text-slate-400' : 'text-[#009689]'}`}>/ ساعة</p>
                       </div>
                     </div>
 
@@ -156,7 +182,7 @@ const UserExplore = () => {
 
                     <div className="flex justify-between items-center pt-2">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black text-[#009689]">{space.price}₪</span>
+                        <span className={`text-3xl font-black ${isClosed ? 'text-slate-400' : 'text-[#009689]'}`}>{space.price}₪</span>
                         <p className="text-xs text-slate-400 font-bold uppercase">/ ساعة</p>
                       </div>
 
@@ -166,7 +192,11 @@ const UserExplore = () => {
                             e.stopPropagation();
                             navigate(`/dashboard/explore/${space.id}`);
                           }}
-                          className="bg-[#009689] hover:bg-[#0D9488] text-white font-bold text-sm py-2.5 px-6 rounded-xl shadow-md shadow-[#009689]/20 transition-all cursor-pointer"
+                          className={`font-bold text-sm py-2.5 px-6 rounded-xl shadow-md transition-all cursor-pointer ${
+                            isClosed
+                              ? 'bg-slate-200 text-slate-500 shadow-slate-200/20 hover:bg-slate-300'
+                              : 'bg-[#009689] hover:bg-[#0D9488] text-white shadow-[#009689]/20'
+                          }`}
                         >
                           عرض التفاصيل
                         </button>

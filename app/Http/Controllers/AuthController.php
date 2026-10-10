@@ -120,7 +120,11 @@ class AuthController extends Controller
             ['token' => $code, 'created_at' => now()]
         );
         
-        \Illuminate\Support\Facades\Mail::to($request->email)->send(new \App\Mail\ResetPasswordCodeMail($code));
+        try {
+            \Illuminate\Support\Facades\Mail::to($request->email)->send(new \App\Mail\ResetPasswordCodeMail($code));
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'حدث خطأ أثناء إرسال البريد الإلكتروني. يرجى التأكد من إعدادات البريد.'], 500);
+        }
         
         return response()->json(['message' => 'تم إرسال رمز التحقق إلى بريدك الإلكتروني.']);
     }

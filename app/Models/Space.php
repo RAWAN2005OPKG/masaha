@@ -13,13 +13,14 @@ class Space extends Model
         'user_id', 'name', 'phone', 'region', 'internet_speed', 
         'total_seats', 'electricity', 'price_per_hour', 'services', 
         'sub_start_date', 'sub_duration_months', 'sub_end_date', 
-        'sub_price', 'is_manual_disabled', 'emergency_reason'
+        'sub_price', 'is_manual_disabled', 'emergency_reason', 'emergency_until'
     ];
 
     protected $casts = [
         'sub_start_date' => 'date',
         'sub_end_date' => 'date',
         'is_manual_disabled' => 'boolean',
+        'emergency_until' => 'datetime',
     ];
 
     public function owner()

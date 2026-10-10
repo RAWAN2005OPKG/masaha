@@ -239,7 +239,7 @@ const EventsManagement = () => {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500">تاريخ بداية الفعالية</label>
+            <label className="text-xs font-bold text-slate-500">ساعة بداية الفعالية</label>
             <input
               type="time"
               value={startTime}

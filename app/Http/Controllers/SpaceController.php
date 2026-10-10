@@ -17,13 +17,17 @@ class SpaceController extends Controller
     {
         $user = $request->user('sanctum') ?? $request->user();
 
-        // Show spaces with active subscriptions
-        $spaces = Space::where(function ($q) {
-                $q->whereNull('sub_end_date')
-                  ->orWhereDate('sub_end_date', '>=', now());
-            })
-            ->get()
+        // Show all spaces regardless of subscription or emergency status
+        $spaces = Space::all()
             ->map(function ($space) use ($user) {
+                // Auto-reopen: if emergency_until has passed, clear the emergency state
+                if ($space->is_manual_disabled && $space->emergency_until && now()->isAfter($space->emergency_until)) {
+                    $space->is_manual_disabled = false;
+                    $space->emergency_reason   = null;
+                    $space->emergency_until    = null;
+                    $space->save();
+                }
+
                 $isFavorite = false;
                 if ($user) {
                     $isFavorite = $space->favoritedBy()->where('user_id', $user->id)->exists();
@@ -47,24 +51,25 @@ class SpaceController extends Controller
                 $avgRating = $reviewsCount > 0 ? round($space->reviews()->avg('rating'), 1) : 4.9;
 
                 return [
-                    'id' => $space->id,
-                    'name' => $space->name,
-                    'price' => (float)$space->price_per_hour,
-                    'region' => $space->region,
-                    'speed' => $space->internet_speed,
-                    'seats' => $totalSeats,
-                    'electricity' => $space->electricity ?: '24/7',
-                    'services' => $space->services,
-                    'servicesList' => $servicesList,
-                    'phone' => $space->phone,
-                    'occupied' => $activeCount,
-                    'available' => $space->is_manual_disabled ? 0 : $available,
-                    'occupancy' => $occupancy,
-                    'rating' => $avgRating,
-                    'ratingCount' => $reviewsCount,
-                    'isFavorite' => $isFavorite,
+                    'id'                 => $space->id,
+                    'name'               => $space->name,
+                    'price'              => (float)$space->price_per_hour,
+                    'region'             => $space->region,
+                    'speed'              => $space->internet_speed,
+                    'seats'              => $totalSeats,
+                    'electricity'        => $space->electricity ?: '24/7',
+                    'services'           => $space->services,
+                    'servicesList'       => $servicesList,
+                    'phone'              => $space->phone,
+                    'occupied'           => $activeCount,
+                    'available'          => $space->is_manual_disabled ? 0 : $available,
+                    'occupancy'          => $occupancy,
+                    'rating'             => $avgRating,
+                    'ratingCount'        => $reviewsCount,
+                    'isFavorite'         => $isFavorite,
                     'is_manual_disabled' => (bool)$space->is_manual_disabled,
-                    'emergency_reason' => $space->emergency_reason,
+                    'emergency_reason'   => $space->emergency_reason,
+                    'emergency_until'    => $space->emergency_until ? $space->emergency_until->toIso8601String() : null,
                 ];
             });
 
@@ -340,6 +345,7 @@ class SpaceController extends Controller
             'is_closed' => (bool)$space->is_manual_disabled,
             'is_manual_disabled' => (bool)$space->is_manual_disabled,
             'emergency_reason' => $space->emergency_reason,
+            'emergency_until' => $space->emergency_until ? $space->emergency_until->toIso8601String() : null,
             'total_seats' => (int)$space->total_seats,
             'price_per_hour' => (float)$space->price_per_hour,
         ]);
@@ -421,25 +427,41 @@ class SpaceController extends Controller
 
         $request->validate([
             'reason' => 'required|string',
+            'hours'  => 'nullable|numeric|min:0.25|max:72',
         ]);
 
         $reason = $request->reason;
+        $hours  = $request->hours ? (float)$request->hours : null;
         $spaceName = $space ? $space->name : 'المساحة';
+
+        // If hours provided → close space for that duration
+        if ($space && $hours) {
+            $until = now()->addHours($hours);
+            $space->is_manual_disabled = true;
+            $space->emergency_reason   = $reason;
+            $space->emergency_until    = $until;
+            $space->save();
+        }
 
         Notification::create([
             'target_role' => 'all',
-            'space_id' => $space ? $space->id : null,
-            'type' => 'emergency',
-            'title' => "تنبيه طارئ: {$reason}",
-            'desc' => "تنبيه لكافة الرواد المتواجدين في {$spaceName}: حدث {$reason}. يرجى التنسيق مع موظف الاستقبال.",
+            'space_id'    => $space ? $space->id : null,
+            'type'        => 'emergency',
+            'title'       => "تنبيه طارئ: {$reason}",
+            'desc'        => $hours
+                ? "تنبيه لكافة الرواد المتواجدين في {$spaceName}: حدث {$reason}. ستكون المساحة متوقفة لمدة {$hours} ساعة تقريباً. يرجى التنسيق مع موظف الاستقبال."
+                : "تنبيه لكافة الرواد المتواجدين في {$spaceName}: حدث {$reason}. يرجى التنسيق مع موظف الاستقبال.",
             'data' => [
-                'space_id' => $space ? $space->id : null,
-                'reason' => $reason,
+                'space_id'       => $space ? $space->id : null,
+                'reason'         => $reason,
+                'emergency_until'=> $hours ? now()->addHours($hours)->toIso8601String() : null,
             ],
         ]);
 
         return response()->json([
-            'message' => 'تم إرسال إشعار الطوارئ بنجاح',
+            'message'         => 'تم إرسال إشعار الطوارئ بنجاح',
+            'is_closed'       => $space && $hours ? true : ($space ? (bool)$space->is_manual_disabled : false),
+            'emergency_until' => $space && $hours ? now()->addHours($hours)->toIso8601String() : null,
         ]);
     }
 
