@@ -14,5 +14,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/{any?}', function () {
-    return view('welcome');
+    if (view()->exists('welcome')) {
+        return view('welcome');
+    }
+
+    return response('<h1>جاري رفع الملفات...</h1><p>يرجى التأكد من رفع مجلد <code>resources/views</code> وملف <code>welcome.blade.php</code> إلى السيرفر.</p>', 200)
+        ->header('Content-Type', 'text/html; charset=utf-8');
 })->where('any', '.*');

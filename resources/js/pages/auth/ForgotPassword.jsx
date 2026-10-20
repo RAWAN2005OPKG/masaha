@@ -21,8 +21,12 @@ const ForgotPassword = () => {
     setErrorMsg('');
     setLoading(true);
     try {
-      await window.axios.post('/api/password/forgot', { email });
-      setSuccessMsg('تم إرسال الرمز إلى بريدك الإلكتروني');
+      const res = await window.axios.post('/api/password/forgot', { email });
+      // In dev mode, the backend may return the code directly if mail fails
+      if (res.data.debug_code) {
+        setCode(String(res.data.debug_code));
+      }
+      setSuccessMsg(res.data.message || 'تم إرسال الرمز إلى بريدك الإلكتروني');
       setStep(2);
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'البريد الإلكتروني غير مسجل');

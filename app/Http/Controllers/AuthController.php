@@ -120,10 +120,25 @@ class AuthController extends Controller
             ['token' => $code, 'created_at' => now()]
         );
         
+        $mailSent = false;
+        $mailError = null;
         try {
             \Illuminate\Support\Facades\Mail::to($request->email)->send(new \App\Mail\ResetPasswordCodeMail($code));
+            $mailSent = true;
         } catch (\Exception $e) {
-            return response()->json(['message' => 'حدث خطأ أثناء إرسال البريد الإلكتروني. يرجى التأكد من إعدادات البريد.'], 500);
+            $mailError = $e->getMessage();
+        }
+
+        // In development/local environment, return the code directly as a fallback
+        if (!$mailSent) {
+            if (config('app.env') === 'local' || config('app.debug')) {
+                return response()->json([
+                    'message' => 'تعذّر إرسال البريد الإلكتروني. رمز التحقق (للتطوير فقط): ' . $code,
+                    'debug_code' => $code,
+                    'mail_error' => $mailError,
+                ], 200);
+            }
+            return response()->json(['message' => 'حدث خطأ أثناء إرسال البريد الإلكتروني. يرجى التواصل مع الدعم الفني.'], 500);
         }
         
         return response()->json(['message' => 'تم إرسال رمز التحقق إلى بريدك الإلكتروني.']);

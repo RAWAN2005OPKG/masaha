@@ -7,7 +7,8 @@ import {
   RiShieldUserLine, 
   RiArrowRightLine, 
   RiSave3Line,
-  RiLoader4Line
+  RiLoader4Line,
+  RiDeleteBinLine
 } from 'react-icons/ri';
 import PageHeader from '../../components/layout/PageHeader';
 
@@ -53,6 +54,20 @@ export const SpacesManagement = () => {
         console.error('Error toggling space status:', err);
         alert('حدث خطأ أثناء تغيير حالة المساحة');
       });
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('هل أنت متأكد أنك تريد حذف هذه المساحة؟ سيتم حذف جميع الحجوزات والبيانات المرتبطة بها نهائياً.')) {
+      axios.delete(`/api/admin/spaces/${id}`)
+        .then(() => {
+          setSpaces(prev => prev.filter(s => s.id !== id));
+          alert('تم حذف المساحة بنجاح');
+        })
+        .catch(err => {
+          console.error('Error deleting space:', err);
+          alert('حدث خطأ أثناء حذف المساحة');
+        });
+    }
   };
 
   return (
@@ -138,6 +153,13 @@ export const SpacesManagement = () => {
                       }`}
                     >
                       {isClosed ? 'تفعيل' : 'ايقاف'}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      title="حذف المساحة"
+                      className="w-10 h-10 text-slate-400 flex items-center justify-center hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer rounded-xl border border-slate-100 hover:border-red-100"
+                    >
+                      <RiDeleteBinLine size={18} />
                     </button>
                   </div>
                 </div>

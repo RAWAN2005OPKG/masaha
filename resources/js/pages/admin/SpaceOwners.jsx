@@ -314,11 +314,7 @@ const SpaceOwners = () => {
                   <RiEdit2Line size={16} />
                 </button>
                 <button 
-                  onClick={() => {
-                    if(window.confirm('هل أنت متأكد أنك تريد حذف حساب صاحب المساحة هذا؟ لا يمكن التراجع عن هذا الإجراء.')) {
-                      setAccounts(prev => prev.filter(a => a.id !== acc.id));
-                    }
-                  }}
+                  onClick={() => handleDelete(acc.id)}
                   className="w-9 h-9 rounded-xl border border-slate-100 text-slate-400 flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all">
                   <RiDeleteBinLine size={16} />
                 </button>

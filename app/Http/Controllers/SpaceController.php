@@ -318,6 +318,14 @@ class SpaceController extends Controller
     public function adminDestroy($id)
     {
         $space = Space::findOrFail($id);
+        
+        // Delete all related data to avoid foreign key constraint errors
+        \App\Models\Notification::where('space_id', $space->id)->delete();
+        $space->reviews()->delete();
+        $space->bookings()->delete();
+        $space->events()->delete();
+        $space->offers()->delete();
+        
         $space->delete();
 
         return response()->json(['message' => 'تم حذف المساحة بنجاح']);

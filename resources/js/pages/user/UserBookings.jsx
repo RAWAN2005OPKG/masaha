@@ -57,8 +57,8 @@ const UserBookings = () => {
     <div className="space-y-8 animate-in fade-in duration-700 pb-20">
       <PageHeader title="حجوزاتي" icon={<RiCalendarCheckLine />} role="user" />
 
-      <div className="flex justify-start overflow-x-auto pb-2">
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl">
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl overflow-x-auto">
           {['الكل', 'حالية', 'قادمة', 'بانتظار التأكيد', 'منتهية'].map(f => (
             <button
               key={f} onClick={() => setFilter(f)}
@@ -70,6 +70,13 @@ const UserBookings = () => {
             </button>
           ))}
         </div>
+
+        <button
+          onClick={() => navigate('/dashboard/explore')}
+          className="bg-[#009689] text-white px-5 py-2.5 rounded-2xl font-black text-xs hover:bg-[#008577] transition-all cursor-pointer shadow-sm flex items-center gap-2"
+        >
+          <span>+ حجز مساحة جديدة</span>
+        </button>
       </div>
 
       <div className="space-y-6">
@@ -79,8 +86,15 @@ const UserBookings = () => {
             <p className="font-bold text-sm">جاري تحميل الحجوزات...</p>
           </div>
         ) : filteredBookings.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm">
-            <p className="text-sm font-bold text-slate-400">لا توجد حجوزات بهذه الحالة حالياً</p>
+          <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm space-y-4">
+            <p className="text-sm font-bold text-slate-500">لا توجد حجوزات بهذه الحالة حالياً</p>
+            <p className="text-xs text-slate-400">يمكنك استكشاف المساحات المتوفرة وحجز مقعدك بكل سهولة.</p>
+            <button
+              onClick={() => navigate('/dashboard/explore')}
+              className="bg-[#009689] text-white px-6 py-3 rounded-2xl font-black text-xs hover:bg-[#008577] transition-all cursor-pointer shadow-md shadow-[#009689]/20 inline-flex items-center gap-2"
+            >
+              استكشف المساحات المتوفرة الآن
+            </button>
           </div>
         ) : (
           filteredBookings.map((booking) => (
