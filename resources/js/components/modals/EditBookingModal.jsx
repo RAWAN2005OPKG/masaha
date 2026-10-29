@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RiCloseLine } from 'react-icons/ri';
 
-const SEAT_TYPES = ['مقعد عادي', 'مكتب خاص', 'غرفة اجتماع', 'مقعد هادئ'];
+const SEAT_TYPES = ['مقعد عادي', 'مقعد خاص', 'غرف خاصة'];
 const INITIAL_FROM = '09:00';
 const INITIAL_TO = '17:00';
 

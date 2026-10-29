@@ -198,6 +198,8 @@ export const EditSpace = () => {
     name: '',
     category: 'غزة',
     price: 0,
+    price_private: 0,
+    price_room: 0,
     seats: 0,
     speed: 0,
     power: 'مولد احتياطي',
@@ -210,10 +212,13 @@ export const EditSpace = () => {
     setLoading(true);
     axios.get(`/api/admin/spaces/${id}`)
       .then(res => {
+        const regular = res.data.price || res.data.price_regular || 0;
         setFormData({
           name: res.data.name || '',
           category: res.data.category || res.data.region || 'غزة',
-          price: res.data.price || 0,
+          price: regular,
+          price_private: res.data.price_private || Math.round(regular * 1.5),
+          price_room: res.data.price_room || Math.round(regular * 3),
           seats: res.data.seats || 0,
           speed: res.data.speed || 0,
           power: res.data.power || 'مولد احتياطي',
@@ -238,6 +243,27 @@ export const EditSpace = () => {
   };
 
   const handleSave = () => {
+    if (!formData.name?.trim()) {
+      alert('اسم المساحة إجباري');
+      return;
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      alert('سعر المقعد العادي إجباري ويجب أن يكون أكبر من 0');
+      return;
+    }
+    if (!formData.price_private || parseFloat(formData.price_private) <= 0) {
+      alert('سعر المقعد الخاص إجباري ويجب أن يكون أكبر من 0');
+      return;
+    }
+    if (!formData.price_room || parseFloat(formData.price_room) <= 0) {
+      alert('سعر الغرف الخاصة إجباري ويجب أن يكون أكبر من 0');
+      return;
+    }
+    if (!formData.seats || parseInt(formData.seats, 10) <= 0) {
+      alert('إجمالي المقاعد إجباري ويجب أن يكون أكبر من 0');
+      return;
+    }
+
     setSaving(true);
     axios.put(`/api/admin/spaces/${id}`, formData)
       .then(res => {
@@ -331,11 +357,33 @@ export const EditSpace = () => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[13px] font-black text-slate-400 uppercase pr-2 tracking-widest">السعر/ساعة (₪)</label>
+            <label className="text-[13px] font-black text-slate-400 uppercase pr-2 tracking-widest">سعر المقعد العادي/ساعة (₪)</label>
             <input 
               type="number" 
               name="price"
               value={formData.price}
+              onChange={handleInputChange}
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-500 transition-all" 
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[13px] font-black text-slate-400 uppercase pr-2 tracking-widest">سعر المقعد الخاص/ساعة (₪)</label>
+            <input 
+              type="number" 
+              name="price_private"
+              value={formData.price_private}
+              onChange={handleInputChange}
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-500 transition-all" 
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[13px] font-black text-slate-400 uppercase pr-2 tracking-widest">سعر الغرف الخاصة/ساعة (₪)</label>
+            <input 
+              type="number" 
+              name="price_room"
+              value={formData.price_room}
               onChange={handleInputChange}
               className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-500 transition-all" 
             />

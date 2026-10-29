@@ -21,6 +21,20 @@ axios.interceptors.request.use(function (config) {
     }
     return config;
 });
+
+// Real-time Online Presence Heartbeat
+const sendHeartbeat = () => {
+    const activeToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
+    if (activeToken && typeof document !== 'undefined' && document.visibilityState !== 'hidden') {
+        axios.post('/api/user/ping').catch(() => {});
+    }
+};
+
+if (typeof window !== 'undefined') {
+    sendHeartbeat();
+    setInterval(sendHeartbeat, 45000);
+    window.addEventListener('focus', sendHeartbeat);
+}
 /**
  * Echo exposes an expressive API for subscribing to channels and listening
  * for events that are broadcast by Laravel. Echo and event broadcasting

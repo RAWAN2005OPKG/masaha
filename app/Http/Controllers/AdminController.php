@@ -177,7 +177,7 @@ class AdminController extends Controller
 
     public function getUsers()
     {
-        $users = User::select('id', 'name', 'email', 'status', 'created_at', 'role', 'avatar', 'rating')
+        $users = User::select('id', 'name', 'email', 'status', 'created_at', 'role', 'avatar', 'rating', 'last_activity_at', 'birth_date')
             ->where('role', 'user') // Only fetch normal users, exclude admins and owners
             ->orderBy('created_at', 'desc')
             ->get()
@@ -187,11 +187,29 @@ class AdminController extends Controller
                     ? (filter_var($user->avatar, FILTER_VALIDATE_URL) ? $user->avatar : asset('storage/' . $user->avatar)) 
                     : null;
 
+                // Real-time online activity check (Within last 2 minutes = Online)
+                $isOnline = false;
+                $lastSeen = 'لم يتصل بعد';
+                if ($user->last_activity_at) {
+                    $lastAct = \Carbon\Carbon::parse($user->last_activity_at);
+                    if ($lastAct->gte(now()->subMinutes(2))) {
+                        $isOnline = true;
+                        $lastSeen = 'متواجد الآن';
+                    } else {
+                        $lastSeen = 'آخر ظهور ' . $lastAct->diffForHumans();
+                    }
+                }
+
+                $status = $isOnline ? 'نشط' : 'غير نشط';
+
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'status' => $user->status,
+                    'status' => $status,
+                    'is_online' => $isOnline,
+                    'last_seen' => $lastSeen,
+                    'birth_date' => $user->birth_date ? \Carbon\Carbon::parse($user->birth_date)->format('Y-m-d') : null,
                     'role' => $user->role,
                     'avatar' => $avatarUrl,
                     'joinDate' => $user->created_at ? $user->created_at->format('Y-m-d') : 'غير معروف',

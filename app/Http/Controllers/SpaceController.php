@@ -16,10 +16,22 @@ class SpaceController extends Controller
     public function index(Request $request)
     {
         $user = $request->user('sanctum') ?? $request->user();
+        $today = Carbon::today();
 
-        // Show all spaces regardless of subscription or emergency status
+        // Filter and map spaces for user exploration
         $spaces = Space::all()
-            ->map(function ($space) use ($user) {
+            ->filter(function ($space) use ($today) {
+                // If subscription has ended, hide/remove from user listings completely
+                if ($space->sub_end_date) {
+                    $endDate = Carbon::parse($space->sub_end_date)->startOfDay();
+                    if ($today->gt($endDate)) {
+                        return false;
+                    }
+                }
+                return true;
+            })
+            ->values()
+            ->map(function ($space) use ($user, $today) {
                 // Auto-reopen: if emergency_until has passed, clear the emergency state
                 if ($space->is_manual_disabled && $space->emergency_until && now()->isAfter($space->emergency_until)) {
                     $space->is_manual_disabled = false;
@@ -50,10 +62,16 @@ class SpaceController extends Controller
                 $reviewsCount = $space->reviews()->count();
                 $avgRating = $reviewsCount > 0 ? round($space->reviews()->avg('rating'), 1) : 4.9;
 
+                $startDate = $space->sub_start_date ? Carbon::parse($space->sub_start_date)->startOfDay() : null;
+                $isComingSoon = $startDate && $today->lt($startDate);
+
                 return [
                     'id'                 => $space->id,
                     'name'               => $space->name,
                     'price'              => (float)$space->price_per_hour,
+                    'price_regular'      => (float)$space->price_per_hour,
+                    'price_private'      => (float)$space->price_private,
+                    'price_room'         => (float)$space->price_room,
                     'region'             => $space->region,
                     'speed'              => $space->internet_speed,
                     'seats'              => $totalSeats,
@@ -70,6 +88,9 @@ class SpaceController extends Controller
                     'is_manual_disabled' => (bool)$space->is_manual_disabled,
                     'emergency_reason'   => $space->emergency_reason,
                     'emergency_until'    => $space->emergency_until ? $space->emergency_until->toIso8601String() : null,
+                    'is_coming_soon'     => $isComingSoon,
+                    'sub_start_date'     => $startDate ? $startDate->format('Y-m-d') : null,
+                    'sub_end_date'       => $space->sub_end_date ? Carbon::parse($space->sub_end_date)->format('Y-m-d') : null,
                 ];
             });
 
@@ -83,6 +104,18 @@ class SpaceController extends Controller
     {
         $space = Space::findOrFail($id);
         $user = $request->user('sanctum') ?? $request->user();
+        $today = Carbon::today();
+
+        // If subscription is expired, regular users cannot view/book it
+        if ($space->sub_end_date && $today->gt(Carbon::parse($space->sub_end_date)->startOfDay())) {
+            return response()->json([
+                'message' => 'هذه المساحة غير متاحة حالياً بسبب انتهاء فترة الاشتراك.',
+                'is_expired' => true
+            ], 404);
+        }
+
+        $startDate = $space->sub_start_date ? Carbon::parse($space->sub_start_date)->startOfDay() : null;
+        $isComingSoon = $startDate && $today->lt($startDate);
 
         $isFavorite = false;
         if ($user) {
@@ -113,6 +146,9 @@ class SpaceController extends Controller
             'id' => $space->id,
             'name' => $space->name,
             'price' => (float)$space->price_per_hour,
+            'price_regular' => (float)$space->price_per_hour,
+            'price_private' => (float)$space->price_private,
+            'price_room' => (float)$space->price_room,
             'region' => $space->region,
             'speed' => $space->internet_speed ?: '100 Mbps',
             'seats' => $totalSeats,
@@ -128,6 +164,9 @@ class SpaceController extends Controller
             'isFavorite' => $isFavorite,
             'is_manual_disabled' => (bool)$space->is_manual_disabled,
             'emergency_reason' => $space->emergency_reason,
+            'is_coming_soon' => $isComingSoon,
+            'sub_start_date' => $startDate ? $startDate->format('Y-m-d') : null,
+            'sub_end_date' => $space->sub_end_date ? Carbon::parse($space->sub_end_date)->format('Y-m-d') : null,
         ]);
     }
 
@@ -193,6 +232,9 @@ class SpaceController extends Controller
                 'category' => $space->region ?: 'غزة',
                 'region' => $space->region ?: 'غزة',
                 'price' => (float)$space->price_per_hour,
+                'price_regular' => (float)$space->price_per_hour,
+                'price_private' => (float)$space->price_private,
+                'price_room' => (float)$space->price_room,
                 'seats' => $totalSeats,
                 'total' => $totalSeats,
                 'occupied' => $occupied,
@@ -238,6 +280,9 @@ class SpaceController extends Controller
             'category' => $space->region ?: 'غزة',
             'region' => $space->region ?: 'غزة',
             'price' => (float)$space->price_per_hour,
+            'price_regular' => (float)$space->price_per_hour,
+            'price_private' => (float)$space->price_private,
+            'price_room' => (float)$space->price_room,
             'seats' => (int)$space->total_seats,
             'speed' => (int)filter_var($space->internet_speed, FILTER_SANITIZE_NUMBER_INT) ?: 100,
             'power' => $space->electricity ?: 'مولد احتياطي',
@@ -260,6 +305,9 @@ class SpaceController extends Controller
             'category' => 'nullable|string',
             'region' => 'nullable|string',
             'price' => 'nullable|numeric',
+            'price_regular' => 'nullable|numeric',
+            'price_private' => 'nullable|numeric',
+            'price_room' => 'nullable|numeric',
             'seats' => 'nullable|numeric',
             'speed' => 'nullable',
             'power' => 'nullable|string',
@@ -271,6 +319,14 @@ class SpaceController extends Controller
         $space->region = $request->category ?? $request->region ?? $space->region;
         if ($request->has('price')) {
             $space->price_per_hour = $request->price;
+        } elseif ($request->has('price_regular')) {
+            $space->price_per_hour = $request->price_regular;
+        }
+        if ($request->has('price_private')) {
+            $space->price_private = $request->price_private;
+        }
+        if ($request->has('price_room')) {
+            $space->price_room = $request->price_room;
         }
         if ($request->has('seats')) {
             $space->total_seats = $request->seats;
@@ -281,7 +337,9 @@ class SpaceController extends Controller
         if ($request->has('power')) {
             $space->electricity = $request->power;
         }
-        if ($request->has('amenities')) {
+        if ($request->has('services')) {
+            $space->services = $request->services;
+        } elseif ($request->has('amenities')) {
             $space->services = $request->amenities;
         }
         if ($request->has('status')) {
@@ -356,6 +414,9 @@ class SpaceController extends Controller
             'emergency_until' => $space->emergency_until ? $space->emergency_until->toIso8601String() : null,
             'total_seats' => (int)$space->total_seats,
             'price_per_hour' => (float)$space->price_per_hour,
+            'price_regular' => (float)$space->price_per_hour,
+            'price_private' => (float)$space->price_private,
+            'price_room' => (float)$space->price_room,
         ]);
     }
 

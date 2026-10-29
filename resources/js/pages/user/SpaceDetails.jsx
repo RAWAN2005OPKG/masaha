@@ -93,8 +93,23 @@ const SpaceDetails = () => {
         <div className="bg-[#009689] p-2 rounded-lg text-white"><RiUserStarLine /></div>
       </div>
 
+      {/* Coming Soon Alert Banner */}
+      {space.is_coming_soon && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-[28px] p-6 text-blue-800 flex items-center gap-4 shadow-sm">
+          <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center shrink-0 text-blue-600">
+            <RiTimeLine size={28} />
+          </div>
+          <div>
+            <h4 className="font-black text-base">⏳ هذه المساحة ستفتتح قريباً</h4>
+            <p className="text-xs text-blue-600 mt-1 font-bold">
+              تاريخ الافتتاح وبدء الحجوزات: {space.sub_start_date}. سيكون الحجز متاحاً لجميع المستخدمين فور حلول هذا الموعد.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Emergency Alert Banner if Space is Stopped */}
-      {isClosed && (
+      {isClosed && !space.is_coming_soon && (
         <div className="bg-red-50 border-2 border-red-200 rounded-[28px] p-6 text-red-700 flex items-center gap-4 shadow-sm animate-pulse">
           <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center shrink-0 text-red-600">
             <RiAlertLine size={28} />
@@ -138,6 +153,114 @@ const SpaceDetails = () => {
             <p className="font-bold text-slate-800">{item.val}</p>
           </div>
         ))}
+      </div>
+
+      {/* Seat Options & Pricing Cards */}
+      <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 space-y-4 shadow-sm">
+        <div className="flex justify-between items-center">
+          <h3 className="font-bold text-slate-800 flex items-center gap-2">
+            🏷️ خيارات الحجز والأسعار المتاحة
+          </h3>
+          <span className="text-xs text-[#009689] font-bold">حسب رغبتك</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl flex flex-col justify-between gap-3 hover:border-[#009689] transition-all">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-lg">🪑</span>
+                <span className="text-lg font-black text-[#009689]">{space.price_regular || space.price}₪<small className="text-xs font-normal text-slate-400">/س</small></span>
+              </div>
+              <h4 className="font-black text-slate-800 text-sm">مقعد عادي</h4>
+              <p className="text-[11px] text-slate-500 font-medium mt-1">مساحة عمل مفتوحة مشتركة مع كهرباء وإنترنت فائق.</p>
+            </div>
+            <button
+              onClick={() => {
+                if (space.is_coming_soon) {
+                  alert(`هذه المساحة ستفتتح قريباً بتاريخ (${space.sub_start_date}). الحجز متاح فور حلول الموعد.`);
+                  return;
+                }
+                if (isClosed) {
+                  alert('المساحة متوقفة حالياً، لا يمكن إتمام الحجز.');
+                  return;
+                }
+                setIsBookingOpen(true);
+              }}
+              disabled={space.is_coming_soon || isClosed}
+              className={`w-full text-xs font-bold py-2.5 rounded-xl transition ${
+                space.is_coming_soon || isClosed 
+                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                  : 'bg-white hover:bg-[#009689] hover:text-white text-slate-700 border border-slate-200 cursor-pointer'
+              }`}
+            >
+              {space.is_coming_soon ? 'يفتتح قريباً' : isClosed ? 'المساحة متوقفة' : 'حجز مقعد عادي'}
+            </button>
+          </div>
+
+          <div className="bg-[#009689]/5 border border-[#009689]/30 p-5 rounded-2xl flex flex-col justify-between gap-3 shadow-xs">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-lg">💼</span>
+                <span className="text-lg font-black text-[#009689]">{space.price_private || Math.round((space.price || 15) * 1.5)}₪<small className="text-xs font-normal text-slate-400">/س</small></span>
+              </div>
+              <h4 className="font-black text-slate-800 text-sm">مقعد خاص</h4>
+              <p className="text-[11px] text-slate-600 font-medium mt-1">مكتب مخصص بمزيد من الخصوصية والهدوء لإنجاز الأعمال.</p>
+            </div>
+            <button
+              onClick={() => {
+                if (space.is_coming_soon) {
+                  alert(`هذه المساحة ستفتتح قريباً بتاريخ (${space.sub_start_date}). الحجز متاح فور حلول الموعد.`);
+                  return;
+                }
+                if (isClosed) {
+                  alert('المساحة متوقفة حالياً، لا يمكن إتمام الحجز.');
+                  return;
+                }
+                setIsBookingOpen(true);
+              }}
+              disabled={space.is_coming_soon || isClosed}
+              className={`w-full text-xs font-bold py-2.5 rounded-xl transition ${
+                space.is_coming_soon || isClosed 
+                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                  : 'bg-[#009689] text-white hover:bg-[#008577] cursor-pointer shadow-sm'
+              }`}
+            >
+              {space.is_coming_soon ? 'يفتتح قريباً' : isClosed ? 'المساحة متوقفة' : 'حجز مقعد خاص'}
+            </button>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl flex flex-col justify-between gap-3 hover:border-[#009689] transition-all">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-lg">🏢</span>
+                <span className="text-lg font-black text-[#009689]">{space.price_room || Math.round((space.price || 15) * 3)}₪<small className="text-xs font-normal text-slate-400">/س</small></span>
+              </div>
+              <h4 className="font-black text-slate-800 text-sm">غرف خاصة</h4>
+              <p className="text-[11px] text-slate-500 font-medium mt-1">غرف اجتماعات ومكاتب تنفيذية خاصة بالفرق والاجتماعات.</p>
+            </div>
+            <button
+              onClick={() => {
+                if (space.is_coming_soon) {
+                  alert(`هذه المساحة ستفتتح قريباً بتاريخ (${space.sub_start_date}). الحجز متاح فور حلول الموعد.`);
+                  return;
+                }
+                if (isClosed) {
+                  alert('المساحة متوقفة حالياً، لا يمكن إتمام الحجز.');
+                  return;
+                }
+                setIsBookingOpen(true);
+              }}
+              disabled={space.is_coming_soon || isClosed}
+              className={`w-full text-xs font-bold py-2.5 rounded-xl transition ${
+                space.is_coming_soon || isClosed 
+                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                  : 'bg-white hover:bg-[#009689] hover:text-white text-slate-700 border border-slate-200 cursor-pointer'
+              }`}
+            >
+              {space.is_coming_soon ? 'يفتتح قريباً' : isClosed ? 'المساحة متوقفة' : 'حجز غرفة خاصة'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Services Section (From Database) */}

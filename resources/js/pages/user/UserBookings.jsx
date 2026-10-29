@@ -149,15 +149,28 @@ const UserBookings = () => {
               )}
 
               <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-                {booking.space_id && (
-                  <button 
-                    type="button"
-                    onClick={() => navigate(`/dashboard/explore/${booking.space_id}#rate-space`)}
-                    className="bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer border border-amber-200"
-                  >
-                    <RiStarFill className="text-amber-500" /> تقييم هذه المساحة
-                  </button>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {booking.space_id && (
+                    <button 
+                      type="button"
+                      onClick={() => navigate(`/dashboard/explore/${booking.space_id}#rate-space`)}
+                      className="bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer border border-amber-200"
+                    >
+                      <RiStarFill className="text-amber-500" /> تقييم هذه المساحة
+                    </button>
+                  )}
+
+                  {booking.receipt_url && (
+                    <a
+                      href={booking.receipt_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer border border-emerald-200"
+                    >
+                      <span>عرض إشعار الدفع 📄</span>
+                    </a>
+                  )}
+                </div>
 
                 {(booking.status === 'حالية' || booking.status === 'قادمة') && (
                   <div className="flex items-center gap-2 mr-auto">

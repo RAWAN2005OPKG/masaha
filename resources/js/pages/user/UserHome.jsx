@@ -8,11 +8,21 @@ const UserHome = () => {
   const [user, setUser] = useState({ name: 'جاري التحميل...', email: '' });
   const [spaces, setSpaces] = useState([]);
   const [offers, setOffers] = useState([]);
+  const [activeBooking, setActiveBooking] = useState(null);
 
   useEffect(() => {
     axios.get('/api/user')
       .then(res => {
         setUser({ name: res.data.name, email: res.data.email });
+      })
+      .catch(err => console.error(err));
+
+    axios.get('/api/user/bookings')
+      .then(res => {
+        if (Array.isArray(res.data)) {
+          const current = res.data.find(b => b.status === 'حالية' || b.raw_status === 'confirmed');
+          if (current) setActiveBooking(current);
+        }
       })
       .catch(err => console.error(err));
 
@@ -57,9 +67,22 @@ const UserHome = () => {
           <h1 className="text-3xl md:text-4xl font-black">{user.name}</h1>
           <p className="text-sm opacity-80">{user.email}</p>
           <div className="pt-4 flex items-center gap-2">
-            <span className="bg-white backdrop-blur-md px-4 py-1.5 rounded-full border border-[var(--secondary-color)] text-xs font-bold text-[var(--secondary-color)] ">
-               لديك حجز نشط اليوم
-            </span>
+            {activeBooking ? (
+              <Link 
+                to="/dashboard/bookings"
+                className="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full border border-emerald-400 text-xs font-bold text-emerald-800 flex items-center gap-1.5 shadow-sm hover:bg-white transition"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>لديك حجز نشط الآن: {activeBooking.name} ({activeBooking.seat})</span>
+              </Link>
+            ) : (
+              <Link 
+                to="/dashboard/explore"
+                className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 text-xs font-bold text-white hover:bg-white/30 transition flex items-center gap-1.5"
+              >
+                <span>مستعد لبدء عملك؟ استكشف المساحات المتوفرة واحجز مقعدك</span>
+              </Link>
+            )}
           </div>
         </div>
         
@@ -115,10 +138,18 @@ const UserHome = () => {
       </button>
 
      
-      <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] text-white font-bold">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-        {space.available ? 'متاح' : 'مغلق'}
-      </div>
+      {/* Space Status Badge */}
+      {space.is_coming_soon ? (
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-blue-600/90 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] text-white font-black shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+          قريباً
+        </div>
+      ) : (
+        <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] text-white font-bold">
+          <span className={`w-1.5 h-1.5 rounded-full ${space.available ? 'bg-emerald-400' : 'bg-red-400'}`} />
+          {space.available ? 'متاح' : 'مغلق'}
+        </div>
+      )}
 
    
       <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/30 backdrop-blur-md px-2 py-1 rounded-md text-white text-[10px]">
@@ -136,7 +167,7 @@ const UserHome = () => {
           <span className="text-[#009689] font-black text-xl leading-none">
             {space.price}₪
           </span>
-          <span className="text-[9px] text-slate-400 font-bold">/ساعة</span>
+          <span className="text-[9px] text-slate-400 font-bold">/ساعة (مقعد عادي)</span>
         </div>
       </div>
 

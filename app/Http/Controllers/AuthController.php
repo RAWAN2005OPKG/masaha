@@ -50,6 +50,41 @@ class AuthController extends Controller
             ]);
         }
 
+        // Check Owner subscription start & end dates
+        if ($user->role === 'owner') {
+            $space = \App\Models\Space::where('user_id', $user->id)->first();
+            if ($space) {
+                $today = \Carbon\Carbon::today();
+                $startDate = $space->sub_start_date ? \Carbon\Carbon::parse($space->sub_start_date)->startOfDay() : null;
+                $endDate = $space->sub_end_date ? \Carbon\Carbon::parse($space->sub_end_date)->startOfDay() : null;
+
+                // 1. Not started yet
+                if ($startDate && $today->lt($startDate)) {
+                    throw ValidationException::withMessages([
+                        'email' => ["طلبك قيد المراجعة / لم يحن موعد اشتراكك بعد. سيبدأ اشتراكك بتاريخ ({$startDate->format('Y/m/d')}). سيتم تمكين الدخول للوحة التحكم فور بدء الموعد أو تفعيل حسابك."],
+                    ]);
+                }
+
+                // 2. Expired
+                if ($endDate && $today->gt($endDate)) {
+                    throw ValidationException::withMessages([
+                        'email' => ["انتهت فترة اشتراكك بتاريخ ({$endDate->format('Y/m/d')}). تم إيقاف الوصول إلى لوحة التحكم، يرجى التواصل مع الإدارة لتجديد الاشتراك."],
+                    ]);
+                }
+
+                // 3. Manual disabled
+                if ($space->is_manual_disabled && !$space->emergency_reason) {
+                    throw ValidationException::withMessages([
+                        'email' => ['تم إيقاف حساب المساحة من قِبل الإدارة. يرجى مراجعة إدارة المنصة.'],
+                    ]);
+                }
+            }
+        }
+
+        try {
+            $user->update(['last_activity_at' => now()]);
+        } catch (\Throwable $e) {}
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

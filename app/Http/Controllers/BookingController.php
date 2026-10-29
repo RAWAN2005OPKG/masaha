@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class BookingController extends Controller
 {
     /**
-     * User submits a booking with optional payment receipt image.
+     * User submits a booking with mandatory payment receipt image.
      */
     public function store(Request $request)
     {
@@ -22,9 +22,16 @@ class BookingController extends Controller
 
         $request->validate([
             'space_id' => 'required|exists:spaces,id',
-            'seat_type' => 'nullable|string',
-            'hours' => 'required|integer|min:1',
-            'receipt' => 'nullable|file|mimes:jpeg,png,jpg,pdf,webp|max:5120', // 5MB
+            'seat_type' => 'required|string',
+            'hours' => 'required|integer|min:1|max:24',
+            'receipt' => 'required|file|mimes:jpeg,png,jpg,webp,pdf|max:10240', // 10MB - mandatory
+        ], [
+            'receipt.required' => 'صورة إشعار الدفع مطلوبة وإجبارية لتأكيد الحجز.',
+            'receipt.file' => 'الملف المرفوع يجب أن يكون ملفاً صالحاً.',
+            'receipt.mimes' => 'يجب أن يكون الإشعار صورة (PNG, JPG, WEBP) أو ملف PDF.',
+            'receipt.max' => 'حجم ملف الإشعار يجب ألا يتجاوز 10 ميجابايت.',
+            'hours.required' => 'يرجى تحديد عدد الساعات.',
+            'space_id.required' => 'المساحة مطلوبة.',
         ]);
 
         $space = Space::findOrFail($request->space_id);
@@ -35,7 +42,21 @@ class BookingController extends Controller
             ], 422);
         }
 
-        $pricePerHour = (float)$space->price_per_hour ?: 20;
+        $seatType = trim($request->seat_type ?: 'مقعد عادي');
+        $basePrice = (float)$space->price_per_hour ?: 15;
+        $pricePrivate = (float)($space->price_private ?: round($basePrice * 1.5, 2));
+        $priceRoom = (float)($space->price_room ?: round($basePrice * 3, 2));
+
+        if ($seatType === 'مقعد خاص') {
+            $pricePerHour = $pricePrivate;
+        } elseif ($seatType === 'غرف خاصة' || $seatType === 'غرفة خاصة') {
+            $seatType = 'غرف خاصة';
+            $pricePerHour = $priceRoom;
+        } else {
+            $seatType = 'مقعد عادي';
+            $pricePerHour = $basePrice;
+        }
+
         $hours = (int)$request->hours;
         $totalPrice = $hours * $pricePerHour;
 
@@ -50,7 +71,7 @@ class BookingController extends Controller
             'space_id' => $space->id,
             'customer_name' => $user->name,
             'customer_phone' => $user->phone,
-            'seat_type' => $request->seat_type ?: 'مقعد عادي',
+            'seat_type' => $seatType,
             'hours' => $hours,
             'price_per_hour' => $pricePerHour,
             'total_price' => $totalPrice,

@@ -105,8 +105,16 @@ const UserExplore = () => {
                     : 'bg-white border-slate-100'
                 }`}
               >
+                {/* Coming Soon Banner */}
+                {space.is_coming_soon && (
+                  <div className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 text-xs font-bold">
+                    <RiTimeLine size={15} className="shrink-0" />
+                    <span>هذه المساحة قيد التجهيز وستفتتح قريباً للمشتركين بتاريخ ({space.sub_start_date})</span>
+                  </div>
+                )}
+
                 {/* Emergency Banner */}
-                {isClosed && (
+                {isClosed && !space.is_coming_soon && (
                   <div className="flex items-center gap-2 bg-red-500 text-white px-5 py-2.5 text-xs font-bold">
                     <RiAlertLine size={15} className="shrink-0" />
                     <span>
@@ -123,7 +131,12 @@ const UserExplore = () => {
                         <div className="flex items-center gap-3">
                           <h2 className="text-2xl font-black text-slate-800 group-hover:text-[#009689] transition-colors">{space.name}</h2>
                           {/* Status Badge */}
-                          {isClosed ? (
+                          {space.is_coming_soon ? (
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-black px-3.5 py-1 rounded-full border border-blue-200">
+                              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                              قريباً
+                            </span>
+                          ) : isClosed ? (
                             <span className="inline-flex items-center gap-1 bg-red-50 text-red-500 text-xs font-bold px-3 py-1 rounded-full border border-red-200">
                               <span className="w-2 h-2 rounded-full bg-red-500"></span>
                               مغلق مؤقتاً
@@ -180,10 +193,17 @@ const UserExplore = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center pt-2">
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-3xl font-black ${isClosed ? 'text-slate-400' : 'text-[#009689]'}`}>{space.price}₪</span>
-                        <p className="text-xs text-slate-400 font-bold uppercase">/ ساعة</p>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2">
+                      <div className="space-y-1">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className={`text-2xl font-black ${isClosed ? 'text-slate-400' : 'text-[#009689]'}`}>{space.price}₪</span>
+                          <span className="text-xs text-slate-400 font-bold">/ساعة (مقعد عادي)</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold">
+                          <span>خاص: {space.price_private || Math.round(space.price * 1.5)}₪</span>
+                          <span>•</span>
+                          <span>غرف: {space.price_room || Math.round(space.price * 3)}₪</span>
+                        </div>
                       </div>
 
                       <div className="flex justify-end gap-3">

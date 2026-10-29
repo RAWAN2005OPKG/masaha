@@ -21,7 +21,10 @@ Route::middleware('throttle:3,1')->post('/password/forgot', [\App\Http\Controlle
 Route::middleware('throttle:5,1')->post('/password/verify-code', [\App\Http\Controllers\AuthController::class, 'verifyCode']);
 Route::middleware('throttle:5,1')->post('/password/reset', [\App\Http\Controllers\AuthController::class, 'resetPassword']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
+    Route::post('/user/ping', function (Request $request) {
+        return response()->json(['status' => 'online', 'time' => now()]);
+    });
     Route::get('/user', function (Request $request) {
         $user = $request->user();
         $userBookings = \App\Models\Booking::where('user_id', $user->id)
@@ -103,8 +106,8 @@ Route::middleware(['auth:sanctum', 'role:receptionist,admin'])->prefix('receptio
     Route::post('/check-out/{id}', [\App\Http\Controllers\BookingController::class, 'checkOut']);
 });
 
-// Owner Endpoints (Restricted to Owner and Admin)
-Route::middleware(['auth:sanctum', 'role:owner,admin'])->prefix('owner')->group(function () {
+// Owner Endpoints (Restricted to Owner and Admin, guarded by Subscription)
+Route::middleware(['auth:sanctum', 'role:owner,admin', 'space.subscription', 'track.activity'])->prefix('owner')->group(function () {
     Route::get('/space', [\App\Http\Controllers\SpaceController::class, 'ownerSpace']);
     Route::post('/space/emergency-toggle', [\App\Http\Controllers\SpaceController::class, 'ownerToggleEmergency']);
     Route::post('/space/notify-emergency', [\App\Http\Controllers\SpaceController::class, 'ownerNotifyEmergency']);
