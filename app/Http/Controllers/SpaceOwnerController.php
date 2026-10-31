@@ -6,16 +6,59 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Space;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use Carbon\Carbon;
 
 class SpaceOwnerController extends Controller
 {
+    /**
+     * Auto-ensure database columns exist if migrations were not executed manually.
+     */
+    private function ensureColumnsExist()
+    {
+        try {
+            if (!Schema::hasColumn('users', 'birth_date')) {
+                Schema::table('users', function (Blueprint $table) {
+                    $table->date('birth_date')->nullable()->after('phone');
+                });
+            }
+        } catch (\Throwable $e) {}
+
+        try {
+            if (!Schema::hasColumn('users', 'last_activity_at')) {
+                Schema::table('users', function (Blueprint $table) {
+                    $table->timestamp('last_activity_at')->nullable()->after('remember_token');
+                });
+            }
+        } catch (\Throwable $e) {}
+
+        try {
+            if (!Schema::hasColumn('spaces', 'sub_duration_unit')) {
+                Schema::table('spaces', function (Blueprint $table) {
+                    $table->string('sub_duration_unit')->default('months')->after('sub_duration_months');
+                });
+            }
+        } catch (\Throwable $e) {}
+
+        try {
+            if (!Schema::hasColumn('spaces', 'sub_duration_value')) {
+                Schema::table('spaces', function (Blueprint $table) {
+                    $table->integer('sub_duration_value')->default(1)->after('sub_duration_unit');
+                });
+            }
+        } catch (\Throwable $e) {}
+    }
+
     public function index()
     {
+        $this->ensureColumnsExist();
         $owners = User::where('role', 'owner')->with('spaces')->get();
         $today = Carbon::today();
+        $hasBirthDate = Schema::hasColumn('users', 'birth_date');
+        $hasDurationUnit = Schema::hasColumn('spaces', 'sub_duration_unit');
         
-        $data = $owners->map(function ($owner) use ($today) {
+        $data = $owners->map(function ($owner) use ($today, $hasBirthDate, $hasDurationUnit) {
             $space = $owner->spaces->first(); // Assuming one space per owner based on UI
             
             $startDate = $space && $space->sub_start_date ? Carbon::parse($space->sub_start_date)->startOfDay() : null;
@@ -47,7 +90,7 @@ class SpaceOwnerController extends Controller
                 'name' => $owner->name,
                 'email' => $owner->email,
                 'phone' => $owner->phone,
-                'birthDate' => $owner->birth_date ? Carbon::parse($owner->birth_date)->format('Y-m-d') : null,
+                'birthDate' => ($hasBirthDate && $owner->birth_date) ? Carbon::parse($owner->birth_date)->format('Y-m-d') : null,
                 'initial' => mb_substr($owner->name, 0, 1),
                 'avatarColor' => 'bg-violet-600',
                 'price' => $space ? $space->sub_price : 0,
@@ -55,8 +98,8 @@ class SpaceOwnerController extends Controller
                 'spaceName' => $space ? $space->name : '',
                 'startDate' => $startDate ? $startDate->format('Y-m-d') : null,
                 'endDate' => $endDate ? $endDate->format('Y-m-d') : null,
-                'duration' => $space ? ($space->sub_duration_value ?: $space->sub_duration_months ?: 1) : 1,
-                'durationUnit' => $space ? ($space->sub_duration_unit ?: 'months') : 'months',
+                'duration' => $space ? (($hasDurationUnit && $space->sub_duration_value) ? $space->sub_duration_value : ($space->sub_duration_months ?: 1)) : 1,
+                'durationUnit' => ($space && $hasDurationUnit && $space->sub_duration_unit) ? $space->sub_duration_unit : 'months',
                 'isManualDisabled' => $space ? $space->is_manual_disabled : false,
                 'isPending' => $isPending,
                 'isExpired' => $isExpired,
@@ -70,6 +113,8 @@ class SpaceOwnerController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensureColumnsExist();
+
         $request->validate([
             'name' => 'required|string|min:2',
             'email' => 'required|email|unique:users,email',
@@ -104,15 +149,20 @@ class SpaceOwnerController extends Controller
             'duration.required' => 'مدة الاشتراك إجبارية',
         ]);
 
-        $user = User::create([
+        $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'phone' => $request->phone,
-            'birth_date' => $request->birthDate,
             'role' => 'owner',
             'status' => 'active',
-        ]);
+        ];
+
+        if (Schema::hasColumn('users', 'birth_date')) {
+            $userData['birth_date'] = $request->birthDate;
+        }
+
+        $user = User::create($userData);
 
         $startDate = Carbon::parse($request->startDate)->startOfDay();
         $duration = (int)$request->duration;
@@ -129,7 +179,7 @@ class SpaceOwnerController extends Controller
             $monthsVal = $duration;
         }
 
-        Space::create([
+        $spaceData = [
             'user_id' => $user->id,
             'name' => $request->spaceName,
             'phone' => $request->phone,
@@ -143,12 +193,19 @@ class SpaceOwnerController extends Controller
             'services' => $request->services,
             'sub_start_date' => $startDate,
             'sub_duration_months' => $monthsVal,
-            'sub_duration_unit' => $unit,
-            'sub_duration_value' => $duration,
             'sub_end_date' => $endDate,
             'sub_price' => 0,
             'is_manual_disabled' => false,
-        ]);
+        ];
+
+        if (Schema::hasColumn('spaces', 'sub_duration_unit')) {
+            $spaceData['sub_duration_unit'] = $unit;
+        }
+        if (Schema::hasColumn('spaces', 'sub_duration_value')) {
+            $spaceData['sub_duration_value'] = $duration;
+        }
+
+        Space::create($spaceData);
 
         return response()->json([
             'message' => 'تم إنشاء حساب صاحب المساحة والمساحة بنجاح',
@@ -175,17 +232,20 @@ class SpaceOwnerController extends Controller
 
     public function show($id)
     {
+        $this->ensureColumnsExist();
         $owner = User::with('spaces')->findOrFail($id);
         if ($owner->role !== 'owner') return response()->json(['error' => 'Unauthorized'], 403);
 
         $space = $owner->spaces->first();
+        $hasBirthDate = Schema::hasColumn('users', 'birth_date');
+        $hasDurationUnit = Schema::hasColumn('spaces', 'sub_duration_unit');
 
         return response()->json([
             'id' => $owner->id,
             'name' => $owner->name,
             'email' => $owner->email,
             'phone' => $owner->phone,
-            'birthDate' => $owner->birth_date ? Carbon::parse($owner->birth_date)->format('Y-m-d') : '',
+            'birthDate' => ($hasBirthDate && $owner->birth_date) ? Carbon::parse($owner->birth_date)->format('Y-m-d') : '',
             'spaceName' => $space ? $space->name : '',
             'pricePerHour' => $space ? $space->price_per_hour : '',
             'pricePrivate' => $space ? $space->price_private : '',
@@ -195,8 +255,8 @@ class SpaceOwnerController extends Controller
             'seats' => $space ? $space->total_seats : '',
             'electricity' => $space ? $space->electricity : '',
             'services' => $space ? $space->services : '',
-            'duration' => $space ? ($space->sub_duration_value ?: $space->sub_duration_months ?: 3) : 3,
-            'durationUnit' => $space ? ($space->sub_duration_unit ?: 'months') : 'months',
+            'duration' => $space ? (($hasDurationUnit && $space->sub_duration_value) ? $space->sub_duration_value : ($space->sub_duration_months ?: 3)) : 3,
+            'durationUnit' => ($space && $hasDurationUnit && $space->sub_duration_unit) ? $space->sub_duration_unit : 'months',
             'startDate' => $space && $space->sub_start_date ? $space->sub_start_date->format('Y-m-d') : '',
             'endDate' => $space && $space->sub_end_date ? $space->sub_end_date->format('Y-m-d') : '',
         ]);
@@ -204,6 +264,7 @@ class SpaceOwnerController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->ensureColumnsExist();
         $owner = User::findOrFail($id);
         if ($owner->role !== 'owner') return response()->json(['error' => 'Unauthorized'], 403);
 
@@ -236,12 +297,17 @@ class SpaceOwnerController extends Controller
             'duration.required' => 'مدة الاشتراك إجبارية',
         ]);
 
-        $owner->update([
+        $updateOwnerData = [
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
-            'birth_date' => $request->birthDate,
-        ]);
+        ];
+
+        if (Schema::hasColumn('users', 'birth_date')) {
+            $updateOwnerData['birth_date'] = $request->birthDate;
+        }
+
+        $owner->update($updateOwnerData);
 
         if ($request->filled('password')) {
             $owner->update(['password' => Hash::make($request->password)]);
@@ -264,7 +330,7 @@ class SpaceOwnerController extends Controller
                 $monthsVal = $duration;
             }
 
-            $space->update([
+            $spaceUpdateData = [
                 'name' => $request->spaceName,
                 'region' => $request->region,
                 'price_per_hour' => (float)$request->pricePerHour,
@@ -276,10 +342,17 @@ class SpaceOwnerController extends Controller
                 'services' => $request->services,
                 'sub_start_date' => $startDate,
                 'sub_duration_months' => $monthsVal,
-                'sub_duration_unit' => $unit,
-                'sub_duration_value' => $duration,
                 'sub_end_date' => $endDate,
-            ]);
+            ];
+
+            if (Schema::hasColumn('spaces', 'sub_duration_unit')) {
+                $spaceUpdateData['sub_duration_unit'] = $unit;
+            }
+            if (Schema::hasColumn('spaces', 'sub_duration_value')) {
+                $spaceUpdateData['sub_duration_value'] = $duration;
+            }
+
+            $space->update($spaceUpdateData);
         }
 
         return response()->json([
