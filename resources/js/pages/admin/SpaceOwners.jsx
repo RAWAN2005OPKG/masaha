@@ -123,7 +123,6 @@ const SpaceOwners = () => {
     spaceName: '',
     phone: '',
     region: 'غزة',
-    birthDate: '',
     internet: '100 Mbps',
     seats: '',
     electricity: '24/7',
@@ -173,7 +172,6 @@ const SpaceOwners = () => {
           spaceName: res.data.spaceName || '',
           phone: res.data.phone || '',
           region: res.data.region || 'غزة',
-          birthDate: res.data.birthDate || '',
           internet: res.data.internet || '100 Mbps',
           seats: res.data.seats || '',
           electricity: res.data.electricity || '24/7',
@@ -245,7 +243,6 @@ const SpaceOwners = () => {
     if (!formData.spaceName.trim()) errors.spaceName = 'اسم المساحة مطلوب';
     if (!formData.phone.trim()) errors.phone = 'رقم الهاتف مطلوب';
     if (!formData.region) errors.region = 'المنطقة مطلوبة';
-    if (!formData.birthDate) errors.birthDate = 'تاريخ الميلاد مطلوب';
     if (!formData.seats || parseInt(formData.seats, 10) <= 0) {
       errors.seats = 'إجمالي المقاعد مطلوب ويجب أن يكون أكبر من 0';
     }
@@ -317,7 +314,6 @@ const SpaceOwners = () => {
       spaceName: '',
       phone: '',
       region: 'غزة',
-      birthDate: '',
       internet: '100 Mbps',
       seats: '',
       electricity: '24/7',
@@ -457,23 +453,7 @@ const SpaceOwners = () => {
             {formErrors.phone && <p className="text-[10px] text-red-500 font-bold pr-2">{formErrors.phone}</p>}
           </div>
 
-          {/* 5. Birth Date */}
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-600 pr-2 flex items-center gap-1">
-              تاريخ الميلاد <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              value={formData.birthDate}
-              onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-              className={`w-full bg-slate-50 border rounded-2xl py-3.5 px-5 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-violet-500/5 transition-all ${
-                formErrors.birthDate ? 'border-red-400 bg-red-50/20' : 'border-slate-100'
-              }`}
-            />
-            {formErrors.birthDate && <p className="text-[10px] text-red-500 font-bold pr-2">{formErrors.birthDate}</p>}
-          </div>
-
-          {/* 6. Space Name */}
+          {/* 5. Space Name */}
           <div className="space-y-2">
             <label className="text-xs font-black text-slate-600 pr-2 flex items-center gap-1">
               اسم المساحة <span className="text-red-500">*</span>
@@ -822,7 +802,6 @@ const SpaceOwners = () => {
                   <div className="flex items-center gap-2 mt-0.5">
                     <p className="text-xs text-slate-400 font-bold">{acc.email}</p>
                     {acc.phone && <span className="text-xs text-slate-400 font-bold">• {acc.phone}</span>}
-                    {acc.birthDate && <span className="text-xs text-slate-400 font-bold">• مواليد {acc.birthDate}</span>}
                   </div>
                 </div>
               </div>

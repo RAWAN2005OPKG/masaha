@@ -106,7 +106,6 @@ class SpaceOwnerController extends Controller
                 'name' => $owner->name,
                 'email' => $owner->email,
                 'phone' => $owner->phone,
-                'birthDate' => ($hasBirthDate && $owner->birth_date) ? Carbon::parse($owner->birth_date)->format('Y-m-d') : null,
                 'initial' => mb_substr($owner->name, 0, 1),
                 'avatarColor' => 'bg-violet-600',
                 'price' => $space ? $space->sub_price : 0,
@@ -138,7 +137,6 @@ class SpaceOwnerController extends Controller
             'spaceName' => 'required|string|min:2',
             'phone' => 'required|string|unique:users,phone',
             'region' => 'required|string',
-            'birthDate' => 'required|date',
             'seats' => 'required|numeric|min:1',
             'pricePerHour' => 'required|numeric|min:0.01',
             'pricePrivate' => 'required|numeric|min:0.01',
@@ -156,7 +154,6 @@ class SpaceOwnerController extends Controller
             'spaceName.required' => 'حقل اسم المساحة إجباري',
             'phone.required' => 'حقل رقم الهاتف إجباري',
             'region.required' => 'حقل المكان / المنطقة إجباري',
-            'birthDate.required' => 'حقل تاريخ الميلاد إجباري',
             'seats.required' => 'حقل إجمالي المقاعد إجباري',
             'pricePerHour.required' => 'حقل سعر الموقع العادي إجباري',
             'pricePrivate.required' => 'حقل سعر الموقع الخاص إجباري',
@@ -173,10 +170,6 @@ class SpaceOwnerController extends Controller
             'role' => 'owner',
             'status' => 'active',
         ];
-
-        if (Schema::hasColumn('users', 'birth_date')) {
-            $userData['birth_date'] = $request->birthDate;
-        }
 
         $user = User::create($userData);
 
@@ -265,7 +258,6 @@ class SpaceOwnerController extends Controller
             'name' => $owner->name,
             'email' => $owner->email,
             'phone' => $owner->phone,
-            'birthDate' => ($hasBirthDate && $owner->birth_date) ? Carbon::parse($owner->birth_date)->format('Y-m-d') : '',
             'spaceName' => $space ? $space->name : '',
             'pricePerHour' => $space ? $space->price_per_hour : '',
             'pricePrivate' => $space ? $space->price_private : '',
@@ -292,7 +284,6 @@ class SpaceOwnerController extends Controller
             'name' => 'required|string|min:2',
             'email' => 'required|email|unique:users,email,'.$id,
             'phone' => 'required|string|unique:users,phone,'.$id,
-            'birthDate' => 'required|date',
             'spaceName' => 'required|string|min:2',
             'region' => 'required|string',
             'seats' => 'required|numeric|min:1',
@@ -306,7 +297,6 @@ class SpaceOwnerController extends Controller
             'name.required' => 'حقل الاسم إجباري',
             'email.required' => 'حقل البريد الإلكتروني إجباري',
             'phone.required' => 'حقل رقم الهاتف إجباري',
-            'birthDate.required' => 'حقل تاريخ الميلاد إجباري',
             'spaceName.required' => 'حقل اسم المساحة إجباري',
             'region.required' => 'حقل المكان / المنطقة إجباري',
             'seats.required' => 'حقل إجمالي المقاعد إجباري',
@@ -322,10 +312,6 @@ class SpaceOwnerController extends Controller
             'email' => $request->email,
             'phone' => $request->phone,
         ];
-
-        if (Schema::hasColumn('users', 'birth_date')) {
-            $updateOwnerData['birth_date'] = $request->birthDate;
-        }
 
         $owner->update($updateOwnerData);
 
