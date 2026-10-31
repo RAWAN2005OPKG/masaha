@@ -34,6 +34,22 @@ class SpaceOwnerController extends Controller
         } catch (\Throwable $e) {}
 
         try {
+            if (!Schema::hasColumn('spaces', 'price_private')) {
+                Schema::table('spaces', function (Blueprint $table) {
+                    $table->decimal('price_private', 8, 2)->nullable()->after('price_per_hour');
+                });
+            }
+        } catch (\Throwable $e) {}
+
+        try {
+            if (!Schema::hasColumn('spaces', 'price_room')) {
+                Schema::table('spaces', function (Blueprint $table) {
+                    $table->decimal('price_room', 8, 2)->nullable()->after('price_per_hour');
+                });
+            }
+        } catch (\Throwable $e) {}
+
+        try {
             if (!Schema::hasColumn('spaces', 'sub_duration_unit')) {
                 Schema::table('spaces', function (Blueprint $table) {
                     $table->string('sub_duration_unit')->default('months')->after('sub_duration_months');
@@ -188,8 +204,6 @@ class SpaceOwnerController extends Controller
             'total_seats' => $request->seats,
             'electricity' => $request->electricity ?: '24/7',
             'price_per_hour' => (float)$request->pricePerHour,
-            'price_private' => (float)$request->pricePrivate,
-            'price_room' => (float)$request->priceRoom,
             'services' => $request->services,
             'sub_start_date' => $startDate,
             'sub_duration_months' => $monthsVal,
@@ -198,6 +212,12 @@ class SpaceOwnerController extends Controller
             'is_manual_disabled' => false,
         ];
 
+        if (Schema::hasColumn('spaces', 'price_private')) {
+            $spaceData['price_private'] = (float)$request->pricePrivate;
+        }
+        if (Schema::hasColumn('spaces', 'price_room')) {
+            $spaceData['price_room'] = (float)$request->priceRoom;
+        }
         if (Schema::hasColumn('spaces', 'sub_duration_unit')) {
             $spaceData['sub_duration_unit'] = $unit;
         }
@@ -334,8 +354,6 @@ class SpaceOwnerController extends Controller
                 'name' => $request->spaceName,
                 'region' => $request->region,
                 'price_per_hour' => (float)$request->pricePerHour,
-                'price_private' => (float)$request->pricePrivate,
-                'price_room' => (float)$request->priceRoom,
                 'total_seats' => $request->seats,
                 'internet_speed' => $request->internet ?: $space->internet_speed,
                 'electricity' => $request->electricity ?: $space->electricity,
@@ -345,6 +363,12 @@ class SpaceOwnerController extends Controller
                 'sub_end_date' => $endDate,
             ];
 
+            if (Schema::hasColumn('spaces', 'price_private')) {
+                $spaceUpdateData['price_private'] = (float)$request->pricePrivate;
+            }
+            if (Schema::hasColumn('spaces', 'price_room')) {
+                $spaceUpdateData['price_room'] = (float)$request->priceRoom;
+            }
             if (Schema::hasColumn('spaces', 'sub_duration_unit')) {
                 $spaceUpdateData['sub_duration_unit'] = $unit;
             }

@@ -322,10 +322,10 @@ class SpaceController extends Controller
         } elseif ($request->has('price_regular')) {
             $space->price_per_hour = $request->price_regular;
         }
-        if ($request->has('price_private')) {
+        if ($request->has('price_private') && \Illuminate\Support\Facades\Schema::hasColumn('spaces', 'price_private')) {
             $space->price_private = $request->price_private;
         }
-        if ($request->has('price_room')) {
+        if ($request->has('price_room') && \Illuminate\Support\Facades\Schema::hasColumn('spaces', 'price_room')) {
             $space->price_room = $request->price_room;
         }
         if ($request->has('seats')) {
